@@ -1,0 +1,9 @@
+(
+  difficulty_per_floor: 0.12,
+  enemy_count_normal_room: 6,
+  reward_rooms_give_choice: true,
+  boss_room_gives_victory: true,
+  floor_rooms: 4,
+  enemy_types: [MeleeChaser, RangedShooter, Charger],
+)
+

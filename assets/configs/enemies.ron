@@ -1,0 +1,30 @@
+(
+  melee_chaser: (
+    max_hp: 35.0,
+    move_speed: 160.0,
+    attack_damage: 12.0,
+    attack_cooldown_s: 0.9,
+    aggro_range: 420.0,
+    attack_range: 38.0,
+    projectile_speed: 0.0,
+  ),
+  ranged_shooter: (
+    max_hp: 28.0,
+    move_speed: 120.0,
+    attack_damage: 10.0,
+    attack_cooldown_s: 1.2,
+    aggro_range: 520.0,
+    attack_range: 360.0,
+    projectile_speed: 420.0,
+  ),
+  charger: (
+    max_hp: 45.0,
+    move_speed: 110.0,
+    attack_damage: 16.0,
+    attack_cooldown_s: 1.6,
+    aggro_range: 520.0,
+    attack_range: 340.0,
+    projectile_speed: 0.0,
+  ),
+)
+

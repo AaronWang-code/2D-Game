@@ -1,0 +1,53 @@
+(
+  rewards: [
+    (
+      reward: IncreaseAttackSpeed,
+      title: "Attack Speed +15%",
+      description: "Attack cooldown reduced (feels faster).",
+      value: 0.15,
+    ),
+    (
+      reward: IncreaseMaxHealth,
+      title: "Max HP +20",
+      description: "Increase max HP and heal the same amount.",
+      value: 20.0,
+    ),
+    (
+      reward: ReduceDashCooldown,
+      title: "Dash CD -15%",
+      description: "Dash becomes available more often.",
+      value: 0.15,
+    ),
+    (
+      reward: LifeStealOnKill,
+      title: "Life Steal",
+      description: "Heal 3 HP on each kill.",
+      value: 3.0,
+    ),
+    (
+      reward: IncreaseCritChance,
+      title: "Crit Chance +5%",
+      description: "Increase critical hit chance.",
+      value: 0.05,
+    ),
+    (
+      reward: IncreaseMoveSpeed,
+      title: "Move Speed +10%",
+      description: "Move faster.",
+      value: 0.10,
+    ),
+    (
+      reward: DashDamageTrail,
+      title: "Dash Trail",
+      description: "Dash leaves a damaging trail.",
+      value: 1.0,
+    ),
+    (
+      reward: BonusProjectile,
+      title: "Bonus Projectile",
+      description: "Attacks also fire a small projectile.",
+      value: 1.0,
+    ),
+  ],
+)
+

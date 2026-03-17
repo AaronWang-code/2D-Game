@@ -1,0 +1,8 @@
+(
+  max_hp: 260.0,
+  move_speed: 135.0,
+  contact_damage: 18.0,
+  phase_thresholds: [0.66, 0.33],
+  projectile_speed: 520.0,
+)
+

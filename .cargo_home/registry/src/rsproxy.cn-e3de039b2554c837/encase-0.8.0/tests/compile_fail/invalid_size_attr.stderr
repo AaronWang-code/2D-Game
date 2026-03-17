@@ -1,0 +1,23 @@
+error: expected attribute arguments in parentheses: `size(...)`
+ --> tests/compile_fail/invalid_size_attr.rs:7:7
+  |
+7 |     #[size]
+  |       ^^^^
+
+error: expected u32 literal
+ --> tests/compile_fail/invalid_size_attr.rs:9:12
+  |
+9 |     #[size()]
+  |            ^
+
+error: expected u32 literal
+  --> tests/compile_fail/invalid_size_attr.rs:11:12
+   |
+11 |     #[size(invalid)]
+   |            ^^^^^^^
+
+error: expected u32 literal or `runtime` identifier
+  --> tests/compile_fail/invalid_size_attr.rs:13:14
+   |
+13 |     #[size(-1)]
+   |              ^

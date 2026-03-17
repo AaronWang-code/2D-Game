@@ -1,0 +1,36 @@
+[package]
+name = "grid"
+version = "0.14.0"
+authors = ["Armin Becher <armin.becher@gmai.com>"]
+edition = "2018"
+description = "Dynamic generic 2D data structure."
+keywords = ["2D", "array", "matrix", "data-structure", "2D-vector"]
+categories = ["science", "data-structures"]
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/becheran/grid"
+documentation = "https://docs.rs/grid"
+
+[badges.gitlab]
+repository = "becheran/grid_ci"
+branch = "master"
+
+[badges.maintenance]
+status = "actively-developed"
+
+[dependencies]
+serde = { version = "1.0.188", features = ["derive"], optional = true }
+
+[dev-dependencies]
+criterion = "0.3.6"
+rand = "0.8.5"
+serde_json = "1.0.106"
+
+[[bench]]
+name = "benches"
+harness = false
+
+[features]
+default = ["std"]            # Default to using the std
+std = []
+serde = ["std", "dep:serde"]

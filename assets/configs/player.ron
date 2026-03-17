@@ -1,0 +1,12 @@
+(
+  max_hp: 100.0,
+  move_speed: 260.0,
+  attack_power: 18.0,
+  attack_cooldown_s: 0.35,
+  dash_cooldown_s: 1.2,
+  dash_speed: 680.0,
+  dash_duration_s: 0.12,
+  invincibility_s: 0.35,
+  crit_chance: 0.05,
+)
+
