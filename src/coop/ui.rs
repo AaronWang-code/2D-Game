@@ -2,12 +2,14 @@ use bevy::prelude::*;
 
 use crate::core::assets::GameAssets;
 use crate::core::input::PlayerInputState;
+use crate::gameplay::player::components::{Energy, Gold, Health, Player};
 use crate::states::AppState;
 use crate::ui::widgets;
 
-use super::components::CoopClientLocalPlayer;
+use super::components::{CoopClientLocalPlayer, CoopPlayer};
 use super::net::{
-    build_client_input, start_client_socket, start_host_socket, CoopMsg, CoopNetConfig, CoopNetState, NetMode, COOP_PORT,
+    build_client_input, start_client_socket, start_host_socket, CoopMsg, CoopNetConfig, CoopNetState, CoopPlayerStateMsg,
+    NetMode, COOP_PORT,
 };
 
 #[derive(Component)]
@@ -26,10 +28,64 @@ pub struct CoopLobbyText;
 pub struct CoopIpText;
 
 #[derive(Component)]
+pub struct CoopClientEntity;
+
+#[derive(Component)]
 pub struct CoopHudText;
 
 #[derive(Component)]
-pub struct CoopClientEntity;
+pub struct CoopClientStatusText;
+
+#[derive(Component)]
+pub struct CoopLocalHealthText;
+
+#[derive(Component)]
+pub struct CoopLocalHealthFill;
+
+#[derive(Component)]
+pub struct CoopLocalEnergyText;
+
+#[derive(Component)]
+pub struct CoopLocalEnergyFill;
+
+#[derive(Component)]
+pub struct CoopLocalGoldText;
+
+#[derive(Component)]
+pub struct CoopMateHealthText;
+
+#[derive(Component)]
+pub struct CoopMateHealthFill;
+
+#[derive(Component)]
+pub struct CoopMateEnergyText;
+
+#[derive(Component)]
+pub struct CoopMateEnergyFill;
+
+#[derive(Component)]
+pub struct CoopMateGoldText;
+
+#[derive(Component)]
+pub struct CoopHostOverlayUi;
+
+#[derive(Component)]
+pub struct CoopHostStatusText;
+
+#[derive(Component)]
+pub struct CoopHostMateHealthText;
+
+#[derive(Component)]
+pub struct CoopHostMateHealthFill;
+
+#[derive(Component)]
+pub struct CoopHostMateEnergyText;
+
+#[derive(Component)]
+pub struct CoopHostMateEnergyFill;
+
+#[derive(Component)]
+pub struct CoopHostMateGoldText;
 
 #[derive(Resource, Debug, Default, Clone)]
 pub struct CoopJoinIp {
@@ -171,7 +227,6 @@ pub fn cleanup_coop_lobby(mut commands: Commands, q: Query<Entity, With<CoopLobb
 }
 
 pub fn setup_coop_client_game(mut commands: Commands, assets: Res<GameAssets>) {
-    // Background and HUD only (client doesn't run full gameplay).
     commands.spawn((
         SpriteBundle {
             texture: assets.textures.white.clone(),
@@ -195,14 +250,48 @@ pub fn setup_coop_client_game(mut commands: Commands, assets: Res<GameAssets>) {
                     position_type: PositionType::Absolute,
                     left: Val::Px(16.0),
                     top: Val::Px(12.0),
+                    row_gap: Val::Px(8.0),
+                    flex_direction: FlexDirection::Column,
                     ..default()
                 },
                 ..default()
             })
             .with_children(|col| {
-                col.spawn((widgets::title_text(&assets, "合作模式", 18.0), CoopHudText));
+                col.spawn((widgets::title_text(&assets, "合作模式", 20.0), CoopClientStatusText));
                 col.spawn(widgets::body_text(&assets, "Esc=断开并返回", 16.0));
             });
+            spawn_status_panel(
+                root,
+                &assets,
+                "我的状态",
+                UiRect {
+                    left: Val::Px(16.0),
+                    top: Val::Px(70.0),
+                    ..default()
+                },
+                CoopLocalHealthText,
+                CoopLocalHealthFill,
+                CoopLocalEnergyText,
+                CoopLocalEnergyFill,
+                CoopLocalGoldText,
+                "CoopClientLocalPanel",
+            );
+            spawn_status_panel(
+                root,
+                &assets,
+                "队友状态",
+                UiRect {
+                    right: Val::Px(16.0),
+                    top: Val::Px(70.0),
+                    ..default()
+                },
+                CoopMateHealthText,
+                CoopMateHealthFill,
+                CoopMateEnergyText,
+                CoopMateEnergyFill,
+                CoopMateGoldText,
+                "CoopClientMatePanel",
+            );
         });
 }
 
@@ -350,6 +439,99 @@ pub fn coop_client_hud_system_v2(net: Res<CoopNetState>, mut q: Query<&mut Text,
     } else {
         text.sections[0].value = "合作模式：等待同步...".to_string();
     }
+}
+
+fn spawn_status_panel<HealthTextMarker, HealthFillMarker, EnergyTextMarker, EnergyFillMarker, GoldTextMarker>(
+    root: &mut ChildBuilder,
+    assets: &GameAssets,
+    title: &str,
+    position: UiRect,
+    health_text_marker: HealthTextMarker,
+    health_fill_marker: HealthFillMarker,
+    energy_text_marker: EnergyTextMarker,
+    energy_fill_marker: EnergyFillMarker,
+    gold_text_marker: GoldTextMarker,
+    name: &str,
+) where
+    HealthTextMarker: Bundle,
+    HealthFillMarker: Bundle,
+    EnergyTextMarker: Bundle,
+    EnergyFillMarker: Bundle,
+    GoldTextMarker: Bundle,
+{
+    root.spawn((
+        NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                left: position.left,
+                right: position.right,
+                top: position.top,
+                bottom: position.bottom,
+                width: Val::Px(260.0),
+                padding: UiRect::all(Val::Px(12.0)),
+                row_gap: Val::Px(8.0),
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+            background_color: BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.72)),
+            ..default()
+        },
+        Name::new(name.to_string()),
+    ))
+    .with_children(|panel| {
+        panel.spawn(widgets::title_text(assets, title, 18.0));
+        panel.spawn((widgets::body_text(assets, "生命：0/0", 16.0), health_text_marker));
+        panel.spawn(NodeBundle {
+            style: Style {
+                width: Val::Px(236.0),
+                height: Val::Px(16.0),
+                ..default()
+            },
+            background_color: BackgroundColor(Color::srgb(0.15, 0.15, 0.18)),
+            ..default()
+        })
+        .with_children(|bar| {
+            bar.spawn((
+                NodeBundle {
+                    style: Style {
+                        width: Val::Percent(0.0),
+                        height: Val::Percent(100.0),
+                        ..default()
+                    },
+                    background_color: BackgroundColor(Color::srgb(0.20, 0.85, 0.30)),
+                    ..default()
+                },
+                health_fill_marker,
+            ));
+        });
+
+        panel.spawn((widgets::body_text(assets, "能量：0/0", 16.0), energy_text_marker));
+        panel.spawn(NodeBundle {
+            style: Style {
+                width: Val::Px(236.0),
+                height: Val::Px(14.0),
+                ..default()
+            },
+            background_color: BackgroundColor(Color::srgb(0.15, 0.15, 0.18)),
+            ..default()
+        })
+        .with_children(|bar| {
+            bar.spawn((
+                NodeBundle {
+                    style: Style {
+                        width: Val::Percent(0.0),
+                        height: Val::Percent(100.0),
+                        ..default()
+                    },
+                    background_color: BackgroundColor(Color::srgb(0.25, 0.65, 0.95)),
+                    ..default()
+                },
+                energy_fill_marker,
+            ));
+        });
+
+        panel.spawn((widgets::body_text(assets, "金币：0", 16.0), gold_text_marker));
+    });
 }
 
 pub fn cleanup_coop_client_game(mut commands: Commands, q: Query<Entity, With<CoopClientUi>>) {

@@ -1,4 +1,5 @@
 pub mod components;
+pub mod hud;
 pub mod net;
 pub mod ui;
 pub mod host;
@@ -31,7 +32,7 @@ impl Plugin for CoopPlugin {
                     net::coop_net_tick_system,
                     ui::coop_client_apply_snapshot_system,
                     ui::coop_client_send_input_system,
-                    ui::coop_client_hud_system_v2,
+                    hud::update_coop_client_panels,
                 )
                     .chain()
                     .run_if(in_state(AppState::CoopGame)),
@@ -40,6 +41,9 @@ impl Plugin for CoopPlugin {
                 OnExit(AppState::CoopGame),
                 (ui::cleanup_coop_client_dynamic, ui::cleanup_coop_client_game),
             )
+            .add_systems(OnEnter(AppState::InGame), hud::setup_coop_host_overlay)
+            .add_systems(Update, hud::update_coop_host_overlay.run_if(in_state(AppState::InGame)))
+            .add_systems(OnExit(AppState::InGame), hud::cleanup_coop_host_overlay)
             // Host-side networking runs inside single-player `InGame`.
             .add_systems(
                 Update,

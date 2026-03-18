@@ -24,6 +24,12 @@ impl Plugin for ShopPlugin {
                     spawn_shop_kiosk_if_needed,
                     maybe_enter_shop_state,
                     open_shop_hotkey,
+                )
+                    .run_if(in_state(AppState::InGame)),
+            )
+            .add_systems(
+                Update,
+                (
                     handle_shop_purchase_input.run_if(in_state(AppState::Shop)),
                 ),
             );
@@ -141,7 +147,7 @@ pub fn maybe_enter_shop_state(
     }
     seen.rooms.insert(current.0);
 
-    generate_shop_offers(&mut offers, data.as_deref(), &mut rng, current.0);
+    ensure_shop_offers_for_room(&mut offers, data.as_deref(), &mut rng, current.0);
     next.set(AppState::Shop);
 }
 
@@ -157,8 +163,20 @@ pub fn open_shop_hotkey(
         return;
     }
     let room = current.as_deref().map(|c| c.0).unwrap_or(RoomId(0));
-    generate_shop_offers(&mut offers, data.as_deref(), &mut rng, room);
+    ensure_shop_offers_for_room(&mut offers, data.as_deref(), &mut rng, room);
     next.set(AppState::Shop);
+}
+
+fn ensure_shop_offers_for_room(
+    offers: &mut ShopOffers,
+    data: Option<&GameDataRegistry>,
+    rng: &mut GameRng,
+    room: RoomId,
+) {
+    if offers.room == Some(room) && !offers.lines.is_empty() {
+        return;
+    }
+    generate_shop_offers(offers, data, rng, room);
 }
 
 fn generate_shop_offers(

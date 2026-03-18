@@ -67,7 +67,9 @@ pub struct CoopPlayerStateMsg {
     pub id: u8,
     pub pos: (f32, f32),
     pub hp: f32,
+    pub hp_max: f32,
     pub energy: f32,
+    pub energy_max: f32,
     pub gold: u32,
 }
 
@@ -225,7 +227,9 @@ pub fn coop_host_snapshot_system(
         id: 1,
         pos: (p1_tf.translation().x, p1_tf.translation().y),
         hp: p1_hp.current,
+        hp_max: p1_hp.max,
         energy: p1_energy.current,
+        energy_max: p1_energy.max,
         gold: p1_gold.0,
     };
 
@@ -236,14 +240,18 @@ pub fn coop_host_snapshot_system(
             id: 2,
             pos: (tf.translation().x, tf.translation().y),
             hp: hp.current,
+            hp_max: hp.max,
             energy: energy.current,
+            energy_max: energy.max,
             gold: gold.map(|g| g.0).unwrap_or(p1_gold.0),
         })
         .unwrap_or(CoopPlayerStateMsg {
             id: 2,
             pos: (p1_tf.translation().x + 40.0, p1_tf.translation().y),
             hp: p1_hp.current,
+            hp_max: p1_hp.max,
             energy: p1_energy.current,
+            energy_max: p1_energy.max,
             gold: p1_gold.0,
         });
 
