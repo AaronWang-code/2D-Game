@@ -6,8 +6,9 @@ use serde::{Deserialize, Serialize};
 use crate::core::input::PlayerInputState;
 use crate::gameplay::combat::components::Projectile;
 use crate::gameplay::enemy::components::{Enemy, EnemyKind, EnemyType};
-use crate::gameplay::map::room::CurrentRoom;
+use crate::gameplay::map::room::{CurrentRoom, FloorLayout, RoomType};
 use crate::gameplay::player::components::{Energy, Gold, Health, Player};
+use crate::gameplay::shop::ShopOffers;
 use crate::states::AppState;
 use crate::coop::components::CoopPlayer;
 
@@ -52,6 +53,7 @@ pub enum CoopMsg {
 pub struct CoopInputMsg {
     pub move_axis: (f32, f32),
     pub attack_pressed: bool,
+    pub attack_held: bool,
     pub ranged_pressed: bool,
     pub ranged_held: bool,
     pub dash_pressed: bool,
@@ -60,6 +62,14 @@ pub struct CoopInputMsg {
     pub aim: (f32, f32),
     pub aim_valid: bool,
     pub interact_pressed: bool,
+    pub shop_purchase_index: Option<u8>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CoopShopOfferMsg {
+    pub title: String,
+    pub description: String,
+    pub cost: u32,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
@@ -91,8 +101,10 @@ pub struct CoopProjectileStateMsg {
 pub struct CoopSnapshotMsg {
     pub tick: u32,
     pub floor_room: u32,
+    pub in_shop_room: bool,
     pub p1: CoopPlayerStateMsg,
     pub p2: CoopPlayerStateMsg,
+    pub shop_offers: Vec<CoopShopOfferMsg>,
     pub enemies: Vec<CoopEnemyStateMsg>,
     pub projectiles: Vec<CoopProjectileStateMsg>,
 }
@@ -203,6 +215,8 @@ pub fn coop_host_snapshot_system(
     player_q: Query<(&GlobalTransform, &Health, &Energy, &Gold), With<Player>>,
     coop_player_q: Query<(&GlobalTransform, &Health, &Energy, Option<&Gold>), With<CoopPlayer>>,
     current_room: Option<Res<CurrentRoom>>,
+    layout: Option<Res<FloorLayout>>,
+    shop_offers: Option<Res<ShopOffers>>,
     enemies_q: Query<(&EnemyKind, &GlobalTransform, &crate::gameplay::player::components::Health), With<Enemy>>,
     projectiles_q: Query<(&Projectile, &Transform)>,
 ) {
@@ -279,11 +293,37 @@ pub fn coop_host_snapshot_system(
     }
 
     let floor_room = current_room.as_deref().map(|r| r.0 .0).unwrap_or(0);
+    let in_shop_room = layout
+        .as_deref()
+        .zip(current_room.as_deref())
+        .and_then(|(layout, current)| layout.room(current.0))
+        .map(|room| room.room_type == RoomType::Shop)
+        .unwrap_or(false);
+    let shop_offers = if in_shop_room {
+        shop_offers
+            .as_deref()
+            .map(|offers| {
+                offers
+                    .lines
+                    .iter()
+                    .map(|line| CoopShopOfferMsg {
+                        title: line.title.clone(),
+                        description: line.description.clone(),
+                        cost: line.cost,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
     let snapshot = CoopSnapshotMsg {
         tick: *tick,
         floor_room,
+        in_shop_room,
         p1,
         p2,
+        shop_offers,
         enemies,
         projectiles,
     };
@@ -308,6 +348,7 @@ pub fn build_client_input(input: &PlayerInputState) -> CoopInputMsg {
     CoopInputMsg {
         move_axis: (input.move_axis.x, input.move_axis.y),
         attack_pressed: input.attack_pressed,
+        attack_held: input.attack_held,
         ranged_pressed: input.ranged_pressed,
         ranged_held: input.ranged_held,
         dash_pressed: input.dash_pressed,
@@ -315,6 +356,7 @@ pub fn build_client_input(input: &PlayerInputState) -> CoopInputMsg {
         heal_held: input.heal_held,
         aim: (aim.x, aim.y),
         aim_valid,
-        interact_pressed: input.interact_pressed,
+        interact_pressed: input.interact_pressed || input.shop_pressed,
+        shop_purchase_index: None,
     }
 }

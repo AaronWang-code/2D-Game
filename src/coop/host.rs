@@ -8,12 +8,18 @@ use crate::gameplay::combat::projectiles;
 use crate::gameplay::effects::flash::Flash;
 use crate::gameplay::effects::particles;
 use crate::gameplay::map::InGameEntity;
+use crate::gameplay::map::room::{CurrentRoom, FloorLayout, RoomType};
 use crate::gameplay::player::combat::spawn_player_melee_hitbox;
 use crate::gameplay::player::components::*;
+use crate::gameplay::shop::{self, ShopOffers};
+use crate::utils::rng::GameRng;
 use crate::utils::math::{clamp_in_room, clamp_length};
 use crate::{constants::{ROOM_HALF_HEIGHT, ROOM_HALF_WIDTH}, core::events::DeathEvent};
 
 use super::components::CoopPlayer;
+
+#[derive(Component)]
+pub struct CoopMateHeadText;
 
 pub fn ensure_coop_player_spawned_system(
     mut commands: Commands,
@@ -250,10 +256,6 @@ pub fn coop_player_attack_input_system(
     if config.mode != NetMode::Host {
         return;
     }
-    if !remote.0.attack_pressed {
-        return;
-    }
-
     let combo_mult = combo_q
         .get_single()
         .ok()
@@ -262,7 +264,7 @@ pub fn coop_player_attack_input_system(
 
     for (player_e, player_tf, facing, power, mut cd, crit, mods) in &mut q {
         cd.timer.tick(time.delta());
-        if !cd.timer.finished() {
+        if !remote.0.attack_held || !cd.timer.finished() {
             continue;
         }
 
@@ -488,12 +490,11 @@ pub fn coop_player_skill1_input_system(
     if config.mode != NetMode::Host {
         return;
     }
-    if !remote.0.skill1_pressed {
-        return;
-    }
-
     for (tf, power, mut energy, mut cd) in &mut q {
         cd.timer.tick(time.delta());
+        if !remote.0.skill1_pressed {
+            continue;
+        }
         if !cd.timer.finished() {
             continue;
         }
@@ -525,6 +526,65 @@ pub fn coop_player_skill1_input_system(
     }
 }
 
+pub fn coop_remote_shop_system(
+    config: Res<CoopNetConfig>,
+    remote: Res<CoopRemoteInput>,
+    layout: Option<Res<FloorLayout>>,
+    current: Option<Res<CurrentRoom>>,
+    mut offers: ResMut<ShopOffers>,
+    data: Option<Res<GameDataRegistry>>,
+    mut rng: ResMut<GameRng>,
+    mut coop_player_q: Query<(
+        &mut Gold,
+        &mut Health,
+        &mut Energy,
+        &mut MoveSpeed,
+        &mut AttackPower,
+        &mut CritChance,
+        &mut DashCooldown,
+        &mut AttackCooldown,
+        &mut RewardModifiers,
+    ), With<CoopPlayer>>,
+) {
+    if config.mode != NetMode::Host {
+        return;
+    }
+    let (Some(layout), Some(current)) = (layout, current) else { return };
+    let Some(room) = layout.room(current.0) else { return };
+    if room.room_type != RoomType::Shop {
+        return;
+    }
+
+    if remote.0.interact_pressed {
+        shop::ensure_shop_offers_for_room(&mut offers, data.as_deref(), &mut rng, current.0);
+    }
+
+    let Some(index) = remote.0.shop_purchase_index.map(|i| i as usize) else { return };
+    shop::ensure_shop_offers_for_room(&mut offers, data.as_deref(), &mut rng, current.0);
+    let Some(line) = offers.lines.get(index) else { return };
+
+    let Ok((mut gold, mut hp, mut energy, mut move_speed, mut power, mut crit, mut dash_cd, mut atk_cd, mut mods)) =
+        coop_player_q.get_single_mut()
+    else {
+        return;
+    };
+    if gold.0 < line.cost {
+        return;
+    }
+    gold.0 -= line.cost;
+    shop::apply_item(
+        line.item,
+        &mut hp,
+        &mut energy,
+        &mut move_speed,
+        &mut power,
+        &mut crit,
+        &mut dash_cd,
+        &mut atk_cd,
+        &mut mods,
+    );
+}
+
 pub fn coop_player_death_system(
     mut death_events: EventReader<DeathEvent>,
     config: Res<CoopNetConfig>,
@@ -544,4 +604,46 @@ pub fn coop_player_death_system(
             return;
         }
     }
+}
+
+pub fn update_coop_player_head_text(
+    mut commands: Commands,
+    assets: Res<GameAssets>,
+    coop_q: Query<(&Transform, &Health), With<CoopPlayer>>,
+    mut text_q: Query<(Entity, &mut Transform, &mut Text), With<CoopMateHeadText>>,
+) {
+    let Ok((player_tf, hp)) = coop_q.get_single() else {
+        for (entity, _, _) in &mut text_q {
+            commands.entity(entity).despawn_recursive();
+        }
+        return;
+    };
+
+    if let Ok((_, mut tf, mut text)) = text_q.get_single_mut() {
+        tf.translation = Vec3::new(player_tf.translation.x, player_tf.translation.y + 34.0, 90.0);
+        text.sections[0].value = format!("{:.0}/{:.0}", hp.current, hp.max);
+        return;
+    }
+
+    commands.spawn((
+        Text2dBundle {
+            text: Text::from_section(
+                format!("{:.0}/{:.0}", hp.current, hp.max),
+                TextStyle {
+                    font: assets.font.clone(),
+                    font_size: 18.0,
+                    color: Color::WHITE,
+                },
+            ),
+            transform: Transform::from_translation(Vec3::new(
+                player_tf.translation.x,
+                player_tf.translation.y + 34.0,
+                90.0,
+            )),
+            ..default()
+        },
+        CoopMateHeadText,
+        InGameEntity,
+        Name::new("CoopMateHeadText"),
+    ));
 }

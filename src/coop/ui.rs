@@ -2,14 +2,12 @@ use bevy::prelude::*;
 
 use crate::core::assets::GameAssets;
 use crate::core::input::PlayerInputState;
-use crate::gameplay::player::components::{Energy, Gold, Health, Player};
 use crate::states::AppState;
 use crate::ui::widgets;
 
-use super::components::{CoopClientLocalPlayer, CoopPlayer};
+use super::components::CoopClientLocalPlayer;
 use super::net::{
-    build_client_input, start_client_socket, start_host_socket, CoopMsg, CoopNetConfig, CoopNetState, CoopPlayerStateMsg,
-    NetMode, COOP_PORT,
+    build_client_input, start_client_socket, start_host_socket, CoopMsg, CoopNetConfig, CoopNetState, NetMode, COOP_PORT,
 };
 
 #[derive(Component)]
@@ -29,9 +27,6 @@ pub struct CoopIpText;
 
 #[derive(Component)]
 pub struct CoopClientEntity;
-
-#[derive(Component)]
-pub struct CoopHudText;
 
 #[derive(Component)]
 pub struct CoopClientStatusText;
@@ -87,9 +82,19 @@ pub struct CoopHostMateEnergyFill;
 #[derive(Component)]
 pub struct CoopHostMateGoldText;
 
+#[derive(Component)]
+pub struct CoopClientShopUi;
+
 #[derive(Resource, Debug, Default, Clone)]
 pub struct CoopJoinIp {
     pub ip: String,
+}
+
+#[derive(Resource, Debug, Default, Clone)]
+pub struct CoopClientShopState {
+    pub open: bool,
+    pub pending_purchase: Option<u8>,
+    pub rendered_tick: u32,
 }
 
 pub fn setup_coop_menu(mut commands: Commands, assets: Res<GameAssets>) {
@@ -102,10 +107,10 @@ pub fn setup_coop_menu(mut commands: Commands, assets: Res<GameAssets>) {
                     panel.spawn(widgets::title_text(&assets, "玩家合作（局域网）", 48.0));
                     panel.spawn(widgets::title_text(
                         &assets,
-                        "H=当房主（进入单人模式并等待连接）  J=输入房主IP并加入  Esc=返回",
+                        "H=当房主（进入游戏等待连接）  J/回车=输入房主IP加入  Esc=返回",
                         18.0,
                     ));
-                    panel.spawn((widgets::title_text(&assets, "房主IP：", 18.0), CoopIpText));
+                    panel.spawn((widgets::title_text(&assets, "房主 IP：", 18.0), CoopIpText));
                 });
         });
 }
@@ -133,7 +138,6 @@ pub fn coop_menu_input_system(
     if keyboard.just_pressed(KeyCode::KeyH) {
         config.mode = NetMode::Host;
         let _ = start_host_socket(&mut net);
-        // Host plays in normal single-player state.
         next.set(AppState::InGame);
         return;
     }
@@ -164,7 +168,7 @@ pub fn coop_menu_input_system(
         }
     }
 
-    ip_text.sections[0].value = format!("房主IP：{}", ip.ip);
+    ip_text.sections[0].value = format!("房主 IP：{}", ip.ip);
 }
 
 pub fn cleanup_coop_menu(mut commands: Commands, q: Query<Entity, With<CoopMenuUi>>) {
@@ -180,7 +184,7 @@ pub fn setup_coop_lobby(mut commands: Commands, assets: Res<GameAssets>) {
             root.spawn(widgets::panel_node(Color::srgba(0.05, 0.06, 0.10, 0.9)))
                 .with_children(|panel| {
                     panel.spawn(widgets::title_text(&assets, "合作模式：连接中", 46.0));
-                    panel.spawn((widgets::title_text(&assets, "连接中...", 18.0), CoopLobbyText));
+                    panel.spawn((widgets::title_text(&assets, "正在连接...", 18.0), CoopLobbyText));
                     panel.spawn(widgets::title_text(&assets, "Esc=取消并返回", 18.0));
                 });
         });
@@ -194,11 +198,11 @@ pub fn coop_lobby_ui_system(config: Res<CoopNetConfig>, net: Res<CoopNetState>, 
             if net.connected {
                 format!("已连接到房主：{host}:{COOP_PORT}")
             } else {
-                format!("正在连接：{host}:{COOP_PORT}（请确认房主已按 H 并进入游戏）")
+                format!("正在连接：{host}:{COOP_PORT}（请确认房主已开始游戏）")
             }
         }
         NetMode::Host => "房主模式无需在此等待".to_string(),
-        NetMode::None => "未选择模式".to_string(),
+        NetMode::None => "尚未选择模式".to_string(),
     };
     text.sections[0].value = status;
 }
@@ -227,6 +231,7 @@ pub fn cleanup_coop_lobby(mut commands: Commands, q: Query<Entity, With<CoopLobb
 }
 
 pub fn setup_coop_client_game(mut commands: Commands, assets: Res<GameAssets>) {
+    commands.init_resource::<CoopClientShopState>();
     commands.spawn((
         SpriteBundle {
             texture: assets.textures.white.clone(),
@@ -260,6 +265,7 @@ pub fn setup_coop_client_game(mut commands: Commands, assets: Res<GameAssets>) {
                 col.spawn((widgets::title_text(&assets, "合作模式", 20.0), CoopClientStatusText));
                 col.spawn(widgets::body_text(&assets, "Esc=断开并返回", 16.0));
             });
+
             spawn_status_panel(
                 root,
                 &assets,
@@ -276,31 +282,120 @@ pub fn setup_coop_client_game(mut commands: Commands, assets: Res<GameAssets>) {
                 CoopLocalGoldText,
                 "CoopClientLocalPanel",
             );
-            spawn_status_panel(
-                root,
-                &assets,
-                "队友状态",
-                UiRect {
-                    right: Val::Px(16.0),
-                    top: Val::Px(70.0),
-                    ..default()
-                },
-                CoopMateHealthText,
-                CoopMateHealthFill,
-                CoopMateEnergyText,
-                CoopMateEnergyFill,
-                CoopMateGoldText,
-                "CoopClientMatePanel",
-            );
         });
 }
 
-pub fn coop_client_send_input_system(input: Res<PlayerInputState>, config: Res<CoopNetConfig>, net: Res<CoopNetState>) {
+pub fn coop_client_shop_input_system(
+    input: Res<PlayerInputState>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    net: Res<CoopNetState>,
+    mut shop: ResMut<CoopClientShopState>,
+) {
+    let in_shop_room = net.last_snapshot.as_ref().map(|s| s.in_shop_room).unwrap_or(false);
+    if !in_shop_room {
+        shop.open = false;
+        shop.pending_purchase = None;
+        return;
+    }
+
+    if input.interact_pressed || input.shop_pressed {
+        shop.open = true;
+    }
+    if keyboard.just_pressed(KeyCode::Escape) {
+        shop.open = false;
+    }
+
+    shop.pending_purchase = if !shop.open {
+        None
+    } else if keyboard.just_pressed(KeyCode::Digit1) || keyboard.just_pressed(KeyCode::Numpad1) {
+        shop.open = false;
+        Some(0)
+    } else if keyboard.just_pressed(KeyCode::Digit2) || keyboard.just_pressed(KeyCode::Numpad2) {
+        shop.open = false;
+        Some(1)
+    } else if keyboard.just_pressed(KeyCode::Digit3) || keyboard.just_pressed(KeyCode::Numpad3) {
+        shop.open = false;
+        Some(2)
+    } else {
+        None
+    };
+}
+
+pub fn coop_client_send_input_system(
+    input: Res<PlayerInputState>,
+    config: Res<CoopNetConfig>,
+    net: Res<CoopNetState>,
+    mut shop: ResMut<CoopClientShopState>,
+) {
     if config.mode != NetMode::Client || !net.connected {
         return;
     }
-    let msg = CoopMsg::Input(build_client_input(&input));
+    let mut payload = build_client_input(&input);
+    payload.shop_purchase_index = shop.pending_purchase.take();
+    let msg = CoopMsg::Input(payload);
     super::net::coop_send_raw(&net, &msg);
+}
+
+pub fn update_coop_client_shop_ui(
+    mut commands: Commands,
+    assets: Res<GameAssets>,
+    net: Res<CoopNetState>,
+    mut shop: ResMut<CoopClientShopState>,
+    existing: Query<Entity, With<CoopClientShopUi>>,
+) {
+    let open = shop.open && net.last_snapshot.as_ref().map(|s| s.in_shop_room).unwrap_or(false);
+    if !open {
+        for e in &existing {
+            commands.entity(e).despawn_recursive();
+        }
+        return;
+    }
+
+    let Some(snapshot) = net.last_snapshot.as_ref() else { return };
+    if snapshot.shop_offers.is_empty() {
+        return;
+    }
+    if existing.iter().next().is_some() && shop.rendered_tick == snapshot.tick {
+        return;
+    }
+
+    for e in &existing {
+        commands.entity(e).despawn_recursive();
+    }
+    shop.rendered_tick = snapshot.tick;
+
+    commands
+        .spawn((widgets::root_node(), CoopClientUi, CoopClientShopUi, Name::new("CoopClientShopOverlay")))
+        .with_children(|root| {
+            root.spawn((
+                NodeBundle {
+                    style: Style {
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    background_color: BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.55)),
+                    ..default()
+                },
+                CoopClientShopUi,
+            ))
+            .with_children(|panel_root| {
+                panel_root.spawn(widgets::panel_node(Color::srgba(0.08, 0.08, 0.12, 0.95))).with_children(|panel| {
+                    panel.spawn(widgets::title_text(&assets, "商店", 28.0));
+                    panel.spawn(widgets::body_text(&assets, "按 1/2/3 购买，Esc 关闭", 18.0));
+                    for (i, offer) in snapshot.shop_offers.iter().enumerate() {
+                        panel.spawn(widgets::body_text(
+                            &assets,
+                            format!("{}. {}（价格：{}）", i + 1, offer.title, offer.cost),
+                            20.0,
+                        ));
+                        panel.spawn(widgets::body_text(&assets, offer.description.clone(), 16.0));
+                    }
+                });
+            });
+        });
 }
 
 pub fn coop_client_apply_snapshot_system(
@@ -309,11 +404,12 @@ pub fn coop_client_apply_snapshot_system(
     config: Res<CoopNetConfig>,
     mut net: ResMut<CoopNetState>,
     keyboard: Res<ButtonInput<KeyCode>>,
+    shop: Res<CoopClientShopState>,
     mut next: ResMut<NextState<AppState>>,
     existing: Query<Entity, With<CoopClientEntity>>,
     mut rendered_tick: Local<u32>,
 ) {
-    if keyboard.just_pressed(KeyCode::Escape) {
+    if keyboard.just_pressed(KeyCode::Escape) && !shop.open {
         net.socket = None;
         net.peer = None;
         net.connected = false;
@@ -330,15 +426,34 @@ pub fn coop_client_apply_snapshot_system(
     }
     *rendered_tick = snapshot.tick;
 
-    // Simple approach: despawn all replicated entities then respawn.
     for e in &existing {
         commands.entity(e).despawn_recursive();
     }
 
-    // Spawn players.
     let my_id = net.my_id.unwrap_or(2);
-    spawn_player_visual(&mut commands, &assets, snapshot.p1.pos, Color::srgb(0.35, 0.9, 0.45), "CoopP1", my_id == 1);
-    spawn_player_visual(&mut commands, &assets, snapshot.p2.pos, Color::srgb(0.25, 0.9, 1.0), "CoopP2", my_id == 2);
+    let (me, mate) = if my_id == 1 {
+        (snapshot.p1, snapshot.p2)
+    } else {
+        (snapshot.p2, snapshot.p1)
+    };
+
+    spawn_player_visual(
+        &mut commands,
+        &assets,
+        me.pos,
+        Color::srgb(0.35, 0.9, 0.45),
+        "CoopLocalPlayer",
+        true,
+    );
+    spawn_player_visual(
+        &mut commands,
+        &assets,
+        mate.pos,
+        Color::srgb(0.25, 0.9, 1.0),
+        "CoopMatePlayer",
+        false,
+    );
+    spawn_mate_head_text(&mut commands, &assets, mate.pos, mate.hp, mate.hp_max);
 
     for e in snapshot.enemies {
         let color = match e.kind {
@@ -409,36 +524,23 @@ fn spawn_player_visual(
     }
 }
 
-pub fn coop_client_hud_system(
-    net: Res<CoopNetState>,
-    mut q: Query<&mut Text, With<CoopHudText>>,
-) {
-    let Ok(mut text) = q.get_single_mut() else { return };
-    if let Some(s) = net.last_snapshot.as_ref() {
-        text.sections[0].value = format!(
-            "合作模式  P1 HP {:.0} Gold {}   P2 HP {:.0} Gold {}",
-            s.p1.hp, s.p1.gold, s.p2.hp, s.p2.gold
-        );
-    } else {
-        text.sections[0].value = "合作模式：等待同步...".to_string();
-    }
-}
-
-pub fn coop_client_hud_system_v2(net: Res<CoopNetState>, mut q: Query<&mut Text, With<CoopHudText>>) {
-    let Ok(mut text) = q.get_single_mut() else { return };
-    if let Some(s) = net.last_snapshot.as_ref() {
-        let (me, mate) = if net.my_id == Some(1) {
-            (&s.p1, &s.p2)
-        } else {
-            (&s.p2, &s.p1)
-        };
-        text.sections[0].value = format!(
-            "合作模式  你 HP {:.0} EN {:.0} Gold {}   队友 HP {:.0} EN {:.0} Gold {}",
-            me.hp, me.energy, me.gold, mate.hp, mate.energy, mate.gold
-        );
-    } else {
-        text.sections[0].value = "合作模式：等待同步...".to_string();
-    }
+fn spawn_mate_head_text(commands: &mut Commands, assets: &GameAssets, pos: (f32, f32), hp: f32, hp_max: f32) {
+    commands.spawn((
+        Text2dBundle {
+            text: Text::from_section(
+                format!("{:.0}/{:.0}", hp, hp_max),
+                TextStyle {
+                    font: assets.font.clone(),
+                    font_size: 18.0,
+                    color: Color::WHITE,
+                },
+            ),
+            transform: Transform::from_translation(Vec3::new(pos.0, pos.1 + 34.0, 90.0)),
+            ..default()
+        },
+        CoopClientEntity,
+        Name::new("CoopMateHeadText"),
+    ));
 }
 
 fn spawn_status_panel<HealthTextMarker, HealthFillMarker, EnergyTextMarker, EnergyFillMarker, GoldTextMarker>(

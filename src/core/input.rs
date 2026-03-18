@@ -6,6 +6,7 @@ use crate::states::AppState;
 pub struct PlayerInputState {
     pub move_axis: Vec2,
     pub attack_pressed: bool,
+    pub attack_held: bool,
     pub ranged_pressed: bool,
     pub ranged_held: bool,
     pub dash_pressed: bool,
@@ -48,6 +49,7 @@ pub fn collect_player_input(
     input.move_axis = map_keyboard_to_movement(&keyboard);
 
     input.attack_pressed = mouse.just_pressed(MouseButton::Left) || keyboard.just_pressed(KeyCode::KeyJ);
+    input.attack_held = mouse.pressed(MouseButton::Left) || keyboard.pressed(KeyCode::KeyJ);
     input.ranged_pressed = mouse.just_pressed(MouseButton::Right);
     input.ranged_held = mouse.pressed(MouseButton::Right);
     input.dash_pressed = keyboard.just_pressed(KeyCode::Space);

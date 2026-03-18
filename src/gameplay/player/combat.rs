@@ -28,7 +28,7 @@ pub fn player_attack_input_system(
 ) {
     let Ok((player_e, player_tf, facing, power, combo, mut cd, crit, mods)) = q.get_single_mut() else { return };
     cd.timer.tick(time.delta());
-    if !input.attack_pressed || !cd.timer.finished() {
+    if !input.attack_held || !cd.timer.finished() {
         return;
     }
 

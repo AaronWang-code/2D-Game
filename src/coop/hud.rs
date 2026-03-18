@@ -10,8 +10,7 @@ use super::net::{CoopNetConfig, CoopNetState, CoopPlayerStateMsg, NetMode};
 use super::ui::{
     CoopClientStatusText, CoopHostMateEnergyFill, CoopHostMateEnergyText, CoopHostMateGoldText, CoopHostMateHealthFill,
     CoopHostMateHealthText, CoopHostOverlayUi, CoopHostStatusText, CoopLocalEnergyFill, CoopLocalEnergyText, CoopLocalGoldText,
-    CoopLocalHealthFill, CoopLocalHealthText, CoopMateEnergyFill, CoopMateEnergyText, CoopMateGoldText, CoopMateHealthFill,
-    CoopMateHealthText,
+    CoopLocalHealthFill, CoopLocalHealthText,
 };
 
 pub fn setup_coop_host_overlay(mut commands: Commands, assets: Res<GameAssets>, config: Res<CoopNetConfig>) {
@@ -70,35 +69,25 @@ pub fn update_coop_client_panels(
         Query<&mut Text, With<CoopLocalHealthText>>,
         Query<&mut Text, With<CoopLocalEnergyText>>,
         Query<&mut Text, With<CoopLocalGoldText>>,
-        Query<&mut Text, With<CoopMateHealthText>>,
-        Query<&mut Text, With<CoopMateEnergyText>>,
-        Query<&mut Text, With<CoopMateGoldText>>,
     )>,
     mut style_sets: ParamSet<(
         Query<&mut Style, With<CoopLocalHealthFill>>,
         Query<&mut Style, With<CoopLocalEnergyFill>>,
-        Query<&mut Style, With<CoopMateHealthFill>>,
-        Query<&mut Style, With<CoopMateEnergyFill>>,
     )>,
 ) {
     if let Some(snapshot) = net.last_snapshot.as_ref() {
-        let (me, mate) = if net.my_id == Some(1) {
+        let me = if net.my_id == Some(1) {
             (&snapshot.p1, &snapshot.p2)
         } else {
             (&snapshot.p2, &snapshot.p1)
-        };
+        }
+        .0;
         set_text_value(&mut text_sets.p0(), "合作模式");
         set_text_value(&mut text_sets.p1(), &format!("生命：{:.0}/{:.0}", me.hp, me.hp_max));
         set_style_width(&mut style_sets.p0(), ratio(me.hp, me.hp_max));
         set_text_value(&mut text_sets.p2(), &format!("能量：{:.0}/{:.0}", me.energy, me.energy_max));
         set_style_width(&mut style_sets.p1(), ratio(me.energy, me.energy_max));
         set_text_value(&mut text_sets.p3(), &format!("金币：{}", me.gold));
-
-        set_text_value(&mut text_sets.p4(), &format!("生命：{:.0}/{:.0}", mate.hp, mate.hp_max));
-        set_style_width(&mut style_sets.p2(), ratio(mate.hp, mate.hp_max));
-        set_text_value(&mut text_sets.p5(), &format!("能量：{:.0}/{:.0}", mate.energy, mate.energy_max));
-        set_style_width(&mut style_sets.p3(), ratio(mate.energy, mate.energy_max));
-        set_text_value(&mut text_sets.p6(), &format!("金币：{}", mate.gold));
     } else {
         set_text_value(&mut text_sets.p0(), "合作模式：等待同步");
         set_text_value(&mut text_sets.p1(), "生命：0/0");
@@ -106,12 +95,6 @@ pub fn update_coop_client_panels(
         set_text_value(&mut text_sets.p2(), "能量：0/0");
         set_style_width(&mut style_sets.p1(), 0.0);
         set_text_value(&mut text_sets.p3(), "金币：0");
-
-        set_text_value(&mut text_sets.p4(), "生命：0/0");
-        set_style_width(&mut style_sets.p2(), 0.0);
-        set_text_value(&mut text_sets.p5(), "能量：0/0");
-        set_style_width(&mut style_sets.p3(), 0.0);
-        set_text_value(&mut text_sets.p6(), "金币：0");
     }
 }
 

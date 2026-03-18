@@ -167,7 +167,7 @@ pub fn open_shop_hotkey(
     next.set(AppState::Shop);
 }
 
-fn ensure_shop_offers_for_room(
+pub fn ensure_shop_offers_for_room(
     offers: &mut ShopOffers,
     data: Option<&GameDataRegistry>,
     rng: &mut GameRng,
@@ -285,7 +285,7 @@ pub fn handle_shop_purchase_input(
     next.set(AppState::InGame);
 }
 
-fn apply_item(
+pub fn apply_item(
     item: ShopItem,
     hp: &mut Health,
     energy: &mut Energy,
