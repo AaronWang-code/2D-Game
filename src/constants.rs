@@ -14,4 +14,3 @@ pub const ENEMY_RADIUS: f32 = 14.0;
 pub const PROJECTILE_RADIUS: f32 = 6.0;
 
 pub const UI_Z: f32 = 1000.0;
-

@@ -13,4 +13,3 @@ impl Plugin for DataPlugin {
         app.add_systems(OnEnter(AppState::Loading), loaders::load_all_configs);
     }
 }
-

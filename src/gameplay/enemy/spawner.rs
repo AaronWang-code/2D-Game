@@ -19,11 +19,14 @@ pub fn choose_enemy_types(data: &GameDataRegistry) -> Vec<EnemyType> {
     if !data.balance.enemy_types.is_empty() {
         return data.balance.enemy_types.clone();
     }
-    vec![EnemyType::MeleeChaser, EnemyType::RangedShooter, EnemyType::Charger]
+    vec![
+        EnemyType::MeleeChaser,
+        EnemyType::RangedShooter,
+        EnemyType::Charger,
+    ]
 }
 
 pub fn pick_enemy_type(rng: &mut GameRng, pool: &[EnemyType]) -> EnemyType {
     let i = (rng.gen_range_f32(0.0, pool.len() as f32) as usize).min(pool.len() - 1);
     pool[i]
 }
-

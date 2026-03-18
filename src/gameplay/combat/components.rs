@@ -25,6 +25,14 @@ pub struct Hitbox {
 }
 
 #[derive(Component, Debug, Clone, Copy)]
+pub struct ArcHitbox {
+    pub origin: Vec2,
+    pub direction: Vec2,
+    pub radius: f32,
+    pub half_angle_rad: f32,
+}
+
+#[derive(Component, Debug, Clone, Copy)]
 pub struct Projectile {
     pub team: Team,
     pub velocity: Vec2,

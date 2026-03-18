@@ -53,17 +53,42 @@ fn spawn_projectile_with_hitbox(
     crit_chance: f32,
     crit_multiplier: f32,
 ) -> Entity {
+    let is_player_ranged = owner.is_some() && team == Team::Player;
+    let (color, size, hitbox_size, lifetime_s, rotation, name) = if is_player_ranged {
+        (
+            Color::srgb(0.18, 0.92, 1.0),
+            Vec2::new(18.0, 8.0),
+            Vec2::new(18.0, 10.0),
+            1.6,
+            Quat::from_rotation_z(velocity.y.atan2(velocity.x)),
+            "PlayerProjectile",
+        )
+    } else {
+        (
+            match team {
+                Team::Player => Color::srgb(0.2, 0.85, 1.0),
+                Team::Enemy => Color::srgb(1.0, 0.35, 0.25),
+            },
+            Vec2::splat(12.0),
+            Vec2::splat(14.0),
+            2.0,
+            Quat::IDENTITY,
+            "Projectile",
+        )
+    };
+
     commands
         .spawn((
             SpriteBundle {
                 texture: assets.textures.white.clone(),
-                transform: Transform::from_translation(pos.extend(20.0)),
+                transform: Transform {
+                    translation: pos.extend(20.0),
+                    rotation,
+                    ..default()
+                },
                 sprite: Sprite {
-                    color: match team {
-                        Team::Player => Color::srgb(0.2, 0.85, 1.0),
-                        Team::Enemy => Color::srgb(1.0, 0.35, 0.25),
-                    },
-                    custom_size: Some(Vec2::splat(12.0)),
+                    color,
+                    custom_size: Some(size),
                     ..default()
                 },
                 ..default()
@@ -72,16 +97,16 @@ fn spawn_projectile_with_hitbox(
             Hitbox {
                 owner,
                 team,
-                size: Vec2::splat(14.0),
+                size: hitbox_size,
                 damage,
                 knockback: 240.0,
                 can_crit,
                 crit_chance,
                 crit_multiplier,
             },
-            Lifetime(Timer::from_seconds(2.0, TimerMode::Once)),
+            Lifetime(Timer::from_seconds(lifetime_s, TimerMode::Once)),
             InGameEntity,
-            Name::new("Projectile"),
+            Name::new(name),
         ))
         .id()
 }

@@ -13,4 +13,3 @@ impl Plugin for CombatPlugin {
         app.add_plugins(systems::CombatSystemsPlugin);
     }
 }
-

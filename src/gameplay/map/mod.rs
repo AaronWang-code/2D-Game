@@ -15,9 +15,16 @@ pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((transitions::TransitionsPlugin, doors::DoorsPlugin, tiles::TilesPlugin))
-            .add_systems(OnEnter(AppState::InGame), generator::generate_and_spawn_floor);
-            // 清理逻辑由 GameplayPlugin 统一在真正离开一局时触发（MainMenu/GameOver/Victory）。
+        app.add_plugins((
+            transitions::TransitionsPlugin,
+            doors::DoorsPlugin,
+            tiles::TilesPlugin,
+        ))
+        .add_systems(
+            OnEnter(AppState::InGame),
+            generator::generate_and_spawn_floor,
+        );
+        // 清理逻辑由 GameplayPlugin 统一在真正离开一局时触发（MainMenu/GameOver/Victory）。
     }
 }
 

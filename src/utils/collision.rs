@@ -16,7 +16,8 @@ impl Aabb2 {
 
     pub fn intersects(self, other: Aabb2) -> bool {
         let delta = (self.center - other.center).abs();
-        delta.x <= (self.half_size.x + other.half_size.x) && delta.y <= (self.half_size.y + other.half_size.y)
+        delta.x <= (self.half_size.x + other.half_size.x)
+            && delta.y <= (self.half_size.y + other.half_size.y)
     }
 }
 

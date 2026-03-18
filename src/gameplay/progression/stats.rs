@@ -11,4 +11,3 @@ pub struct RunStats {
 pub fn update_run_stats(mut stats: Local<RunStats>, time: Res<Time>) {
     stats.time_s += time.delta_seconds();
 }
-

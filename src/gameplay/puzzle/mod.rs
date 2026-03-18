@@ -9,4 +9,3 @@ pub struct PuzzlePlugin;
 impl Plugin for PuzzlePlugin {
     fn build(&self, _app: &mut App) {}
 }
-

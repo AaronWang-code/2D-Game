@@ -57,4 +57,3 @@ pub fn button_bundle() -> ButtonBundle {
         ..default()
     }
 }
-

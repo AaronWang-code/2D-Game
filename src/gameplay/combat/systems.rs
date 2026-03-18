@@ -11,6 +11,7 @@ impl Plugin for CombatSystemsPlugin {
         app.add_systems(
             Update,
             (
+                hitbox::reflect_enemy_projectiles_on_melee,
                 hitbox::detect_hitbox_hurtbox_overlap,
                 projectiles::move_projectiles,
                 damage::apply_damage_events,

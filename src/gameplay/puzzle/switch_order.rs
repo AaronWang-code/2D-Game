@@ -5,4 +5,3 @@ pub fn handle_switch_interaction() {}
 pub fn validate_switch_order() -> bool {
     true
 }
-

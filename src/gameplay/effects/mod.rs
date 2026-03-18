@@ -11,15 +11,15 @@ pub struct EffectsPlugin;
 
 impl Plugin for EffectsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<screen_shake::ScreenShakeRequest>().add_systems(
-            Update,
-            (
-                flash::update_flash_effect,
-                particles::update_particles,
-                afterimage::update_afterimages,
-            )
-                .run_if(in_state(AppState::InGame)),
-        );
+        app.add_event::<screen_shake::ScreenShakeRequest>()
+            .add_systems(
+                Update,
+                (
+                    flash::update_flash_effect,
+                    particles::update_particles,
+                    afterimage::update_afterimages,
+                )
+                    .run_if(in_state(AppState::InGame)),
+            );
     }
 }
-

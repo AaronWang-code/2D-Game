@@ -38,7 +38,11 @@ pub fn spawn_dash_particles(commands: &mut Commands, assets: &GameAssets, pos: V
     spawn_hit_particles(commands, assets, pos, Color::srgba(0.8, 0.9, 1.0, 0.7));
 }
 
-pub fn update_particles(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Particle, &mut Transform, &mut Sprite)>) {
+pub fn update_particles(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut q: Query<(Entity, &mut Particle, &mut Transform, &mut Sprite)>,
+) {
     for (e, mut p, mut tf, mut sprite) in &mut q {
         p.lifetime.tick(time.delta());
         tf.translation += (p.velocity * time.delta_seconds()).extend(0.0);

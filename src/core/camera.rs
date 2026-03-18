@@ -15,8 +15,7 @@ impl Plugin for CameraPlugin {
             .add_systems(Startup, setup_camera)
             .add_systems(
                 Update,
-                (camera_follow_player, apply_screen_shake)
-                    .run_if(in_state(AppState::InGame)),
+                (camera_follow_player, apply_screen_shake).run_if(in_state(AppState::InGame)),
             );
     }
 }
@@ -30,8 +29,12 @@ pub fn camera_follow_player(
     mut camera_q: Query<&mut Transform, (With<MainCamera>, Without<Player>)>,
     time: Res<Time>,
 ) {
-    let Ok(player_tf) = player_q.get_single() else { return };
-    let Ok(mut camera_tf) = camera_q.get_single_mut() else { return };
+    let Ok(player_tf) = player_q.get_single() else {
+        return;
+    };
+    let Ok(mut camera_tf) = camera_q.get_single_mut() else {
+        return;
+    };
 
     let target = player_tf.translation().truncate();
     let current = camera_tf.translation.truncate();
@@ -51,7 +54,9 @@ pub fn apply_screen_shake(
         shake.trigger(req.strength, req.duration);
     }
 
-    let Ok(mut tf) = camera_q.get_single_mut() else { return };
+    let Ok(mut tf) = camera_q.get_single_mut() else {
+        return;
+    };
     let offset = shake.update(time.delta_seconds());
     tf.translation.x += offset.x;
     tf.translation.y += offset.y;

@@ -64,4 +64,3 @@ impl FloorLayout {
 
 #[derive(Resource, Debug, Clone, Copy)]
 pub struct CurrentRoom(pub RoomId);
-

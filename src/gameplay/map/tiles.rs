@@ -48,8 +48,16 @@ pub fn spawn_room_tiles(commands: &mut Commands, assets: &GameAssets) {
     let thickness = 20.0;
     let size = Vec2::new(ROOM_HALF_WIDTH * 2.0 + thickness, thickness);
     for (name, pos, custom_size) in [
-        ("WallTop", Vec3::new(0.0, ROOM_HALF_HEIGHT + thickness * 0.5, 1.0), size),
-        ("WallBottom", Vec3::new(0.0, -(ROOM_HALF_HEIGHT + thickness * 0.5), 1.0), size),
+        (
+            "WallTop",
+            Vec3::new(0.0, ROOM_HALF_HEIGHT + thickness * 0.5, 1.0),
+            size,
+        ),
+        (
+            "WallBottom",
+            Vec3::new(0.0, -(ROOM_HALF_HEIGHT + thickness * 0.5), 1.0),
+            size,
+        ),
         (
             "WallLeft",
             Vec3::new(-(ROOM_HALF_WIDTH + thickness * 0.5), 0.0, 1.0),
@@ -77,4 +85,3 @@ pub fn spawn_room_tiles(commands: &mut Commands, assets: &GameAssets) {
         ));
     }
 }
-

@@ -31,7 +31,8 @@ impl ScreenShake {
         let t = self.remaining.max(0.001);
         let falloff = (t / (t + dt)).clamp(0.0, 1.0);
         let mut rng = rand::rngs::StdRng::seed_from_u64(self.seed ^ (t.to_bits() as u64));
-        let offset = Vec2::new(rng.gen_range(-1.0..=1.0), rng.gen_range(-1.0..=1.0)) * self.strength;
+        let offset =
+            Vec2::new(rng.gen_range(-1.0..=1.0), rng.gen_range(-1.0..=1.0)) * self.strength;
         offset * falloff
     }
 }

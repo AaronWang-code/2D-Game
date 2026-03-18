@@ -1,9 +1,15 @@
 (
   rewards: [
     (
+      reward: EnhanceMeleeWeapon,
+      title: "近战精通",
+      description: "强化近战伤害、攻击距离和攻击范围，并略微缩短近战冷却。持续强化后可解锁弹反。",
+      value: 1.0,
+    ),
+    (
       reward: IncreaseAttackSpeed,
       title: "攻速提升 +10%",
-      description: "近战和远程的攻击间隔都会缩短。",
+      description: "提高近战与远程的攻击速度。",
       value: 0.10,
     ),
     (
@@ -32,9 +38,9 @@
     ),
     (
       reward: IncreaseMoveSpeed,
-      title: "移速提升 +10%",
-      description: "整体移动更快。",
-      value: 0.10,
+      title: "移速提升 +18%",
+      description: "显著提高移动速度，让走位更有手感。",
+      value: 0.18,
     ),
     (
       reward: DashDamageTrail,
@@ -43,9 +49,9 @@
       value: 1.0,
     ),
     (
-      reward: BonusProjectile,
-      title: "追加飞弹",
-      description: "近战攻击会额外射出一枚小飞弹。",
+      reward: EnhanceRangedWeapon,
+      title: "远程改装",
+      description: "强化右键远程的伤害、射速与弹速。",
       value: 1.0,
     ),
   ],

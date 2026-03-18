@@ -38,4 +38,3 @@ pub fn update_flash_effect(
         }
     }
 }
-

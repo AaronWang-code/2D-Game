@@ -111,6 +111,7 @@ fn enter_reward_selection(
 
 fn generate_reward_choices(rng: &mut GameRng) -> Vec<RewardType> {
     let mut pool = vec![
+        RewardType::EnhanceMeleeWeapon,
         RewardType::IncreaseAttackSpeed,
         RewardType::IncreaseMaxHealth,
         RewardType::ReduceDashCooldown,
@@ -118,7 +119,7 @@ fn generate_reward_choices(rng: &mut GameRng) -> Vec<RewardType> {
         RewardType::IncreaseCritChance,
         RewardType::IncreaseMoveSpeed,
         RewardType::DashDamageTrail,
-        RewardType::BonusProjectile,
+        RewardType::EnhanceRangedWeapon,
     ];
     rng.shuffle(&mut pool);
     pool.truncate(3);
@@ -240,13 +241,14 @@ fn reward_value_for(data: Option<&GameDataRegistry>, reward: RewardType) -> f32 
             .map(|cfg| cfg.value)
     })
     .unwrap_or_else(|| match reward {
+        RewardType::EnhanceMeleeWeapon => 1.0,
         RewardType::IncreaseAttackSpeed => 0.10,
         RewardType::IncreaseMaxHealth => 20.0,
         RewardType::ReduceDashCooldown => 0.15,
         RewardType::LifeStealOnKill => 3.0,
         RewardType::IncreaseCritChance => 0.05,
-        RewardType::IncreaseMoveSpeed => 0.10,
+        RewardType::IncreaseMoveSpeed => 0.18,
         RewardType::DashDamageTrail => 1.0,
-        RewardType::BonusProjectile => 1.0,
+        RewardType::EnhanceRangedWeapon => 1.0,
     })
 }

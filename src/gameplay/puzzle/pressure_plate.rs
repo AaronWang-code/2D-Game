@@ -5,4 +5,3 @@ pub fn update_pressure_plate_state() {}
 pub fn check_pressure_plate_completion() -> bool {
     false
 }
-

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::events::{DamageEvent, DeathEvent};
-use crate::gameplay::combat::components::{Knockback, Hurtbox, Team};
+use crate::gameplay::combat::components::{Hurtbox, Knockback, Team};
 use crate::gameplay::effects::flash::Flash;
 use crate::gameplay::player::components::{Health, InvincibilityTimer};
 
@@ -18,7 +18,9 @@ pub fn apply_damage_events(
     )>,
 ) {
     for ev in damage_events.read() {
-        let Ok((entity, mut health, inv_opt, hurtbox, flash_opt, mut knockback)) = q.get_mut(ev.target) else {
+        let Ok((entity, mut health, inv_opt, hurtbox, flash_opt, mut knockback)) =
+            q.get_mut(ev.target)
+        else {
             continue;
         };
 
@@ -44,10 +46,7 @@ pub fn apply_damage_events(
     }
 }
 
-pub fn apply_knockback_decay(
-    time: Res<Time>,
-    mut q: Query<(&mut Knockback, &mut Transform)>,
-) {
+pub fn apply_knockback_decay(time: Res<Time>, mut q: Query<(&mut Knockback, &mut Transform)>) {
     for (mut kb, mut tf) in &mut q {
         tf.translation += (kb.0 * time.delta_seconds()).extend(0.0);
         kb.0 *= 0.0;

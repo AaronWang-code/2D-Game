@@ -15,7 +15,10 @@ pub fn apply_reward_to_player_components(
     atk_cd: &mut AttackCooldown,
 ) {
     match reward {
-        RewardType::IncreaseAttackSpeed => mods.attack_speed_mult += value,
+        RewardType::EnhanceMeleeWeapon => {
+            mods.melee_mastery_stacks += reward_stack_gain(value);
+        }
+        RewardType::IncreaseAttackSpeed => mods.attack_speed_add += value,
         RewardType::IncreaseMaxHealth => {
             mods.max_hp_add += value;
             health.max += value;
@@ -32,10 +35,16 @@ pub fn apply_reward_to_player_components(
             move_speed.0 *= 1.0 + value;
         }
         RewardType::DashDamageTrail => mods.dash_damage_trail = true,
-        RewardType::BonusProjectile => mods.bonus_projectile = true,
+        RewardType::EnhanceRangedWeapon => {
+            mods.ranged_mastery_stacks += reward_stack_gain(value);
+        }
     }
 
     dash_cd.apply_reduction(mods.dash_cooldown_mult);
-    atk_cd.apply_speed_bonus(mods.attack_speed_mult);
-    ranged_cd.apply_speed_bonus(mods.attack_speed_mult);
+    atk_cd.apply_speed_bonus(mods.total_melee_speed_bonus());
+    ranged_cd.apply_speed_bonus(mods.total_ranged_speed_bonus());
+}
+
+fn reward_stack_gain(value: f32) -> u32 {
+    value.max(1.0).round() as u32
 }

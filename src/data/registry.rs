@@ -11,4 +11,3 @@ pub struct GameDataRegistry {
     pub rooms: RoomGenConfig,
     pub balance: GameBalanceConfig,
 }
-

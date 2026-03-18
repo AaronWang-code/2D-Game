@@ -13,4 +13,3 @@ impl Plugin for EnemyPlugin {
         app.add_plugins((systems::EnemySystemsPlugin,));
     }
 }
-

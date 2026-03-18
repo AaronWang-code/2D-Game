@@ -101,9 +101,14 @@ fn reward_copy(data: Option<&GameDataRegistry>, reward: RewardType) -> (String, 
     }
 
     match reward {
+        RewardType::EnhanceMeleeWeapon => (
+            "近战精通".to_string(),
+            "强化近战伤害、攻击距离和攻击范围，并略微缩短近战冷却。持续强化后可解锁弹反。"
+                .to_string(),
+        ),
         RewardType::IncreaseAttackSpeed => (
             "攻速提升 +10%".to_string(),
-            "近战和远程的攻击间隔都会缩短。".to_string(),
+            "提高近战与远程的攻击速度。".to_string(),
         ),
         RewardType::IncreaseMaxHealth => (
             "最大生命 +20".to_string(),
@@ -120,16 +125,17 @@ fn reward_copy(data: Option<&GameDataRegistry>, reward: RewardType) -> (String, 
             "暴击率 +5%".to_string(),
             "近战与远程攻击都有机会造成暴击。".to_string(),
         ),
-        RewardType::IncreaseMoveSpeed => {
-            ("移速提升 +10%".to_string(), "整体移动更快。".to_string())
-        }
+        RewardType::IncreaseMoveSpeed => (
+            "移速提升 +18%".to_string(),
+            "显著提高移动速度，让走位更有手感。".to_string(),
+        ),
         RewardType::DashDamageTrail => (
             "冲刺残影".to_string(),
             "冲刺时留下会造成伤害的轨迹。".to_string(),
         ),
-        RewardType::BonusProjectile => (
-            "追加飞弹".to_string(),
-            "近战攻击会额外射出一枚小飞弹。".to_string(),
+        RewardType::EnhanceRangedWeapon => (
+            "远程改装".to_string(),
+            "强化右键远程的伤害、射速与弹速。".to_string(),
         ),
     }
 }

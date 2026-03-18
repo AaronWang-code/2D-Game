@@ -11,4 +11,3 @@ impl Plugin for RewardsPlugin {
         app.add_plugins((systems::RewardsSystemsPlugin,));
     }
 }
-

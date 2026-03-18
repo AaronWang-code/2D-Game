@@ -20,4 +20,3 @@ pub enum RoomState {
     Cleared,
     BossFight,
 }
-

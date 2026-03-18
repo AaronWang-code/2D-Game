@@ -58,4 +58,3 @@ impl Plugin for EventsPlugin {
             .add_event::<BossPhaseChangeEvent>();
     }
 }
-

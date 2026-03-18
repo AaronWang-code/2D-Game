@@ -43,7 +43,7 @@ fn default_registry() -> GameDataRegistry {
             max_hp: 100.0,
             move_speed: 260.0,
             attack_power: 18.0,
-            attack_cooldown_s: 0.50,
+            attack_cooldown_s: 0.60,
             ranged_cooldown_s: 0.70,
             dash_cooldown_s: 1.2,
             dash_speed: 680.0,

@@ -56,4 +56,3 @@ pub enum ChargerPhase {
     Charging,
     Stunned,
 }
-
