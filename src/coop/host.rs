@@ -609,8 +609,8 @@ pub fn coop_player_death_system(
 pub fn update_coop_player_head_text(
     mut commands: Commands,
     assets: Res<GameAssets>,
-    coop_q: Query<(&Transform, &Health), With<CoopPlayer>>,
-    mut text_q: Query<(Entity, &mut Transform, &mut Text), With<CoopMateHeadText>>,
+    coop_q: Query<(&Transform, &Health), (With<CoopPlayer>, Without<CoopMateHeadText>)>,
+    mut text_q: Query<(Entity, &mut Transform, &mut Text), (With<CoopMateHeadText>, Without<CoopPlayer>)>,
 ) {
     let Ok((player_tf, hp)) = coop_q.get_single() else {
         for (entity, _, _) in &mut text_q {
