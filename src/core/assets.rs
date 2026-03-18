@@ -14,6 +14,7 @@ pub struct GameAssets {
 #[derive(Resource, Clone, Default)]
 pub struct TextureHandles {
     pub white: Handle<Image>,
+    pub player: Handle<Image>,
 }
 
 #[derive(Resource, Clone, Default)]
@@ -29,7 +30,10 @@ pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AppState::Loading), load_game_assets)
-            .add_systems(Update, check_assets_ready.run_if(in_state(AppState::Loading)));
+            .add_systems(
+                Update,
+                check_assets_ready.run_if(in_state(AppState::Loading)),
+            );
     }
 }
 
@@ -39,6 +43,7 @@ pub fn load_game_assets(
     mut images: ResMut<Assets<Image>>,
 ) {
     let font = asset_server.load("fonts/main_font.ttf");
+    let player = asset_server.load("textures/player_hero.png");
 
     let white = images.add(Image::new_fill(
         Extent3d {
@@ -54,7 +59,7 @@ pub fn load_game_assets(
 
     commands.insert_resource(GameAssets {
         font,
-        textures: TextureHandles { white },
+        textures: TextureHandles { white, player },
         audio: AudioHandles::default(),
     });
 }
@@ -64,7 +69,9 @@ pub fn check_assets_ready(
     asset_server: Res<AssetServer>,
     mut next_state: ResMut<NextState<AppState>>,
 ) {
-    if asset_server.is_loaded_with_dependencies(&assets.font) {
+    if asset_server.is_loaded_with_dependencies(&assets.font)
+        && asset_server.is_loaded_with_dependencies(&assets.textures.player)
+    {
         next_state.set(AppState::MainMenu);
     }
 }

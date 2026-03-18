@@ -11,6 +11,7 @@ use crate::gameplay::map::InGameEntity;
 use crate::states::{AppState, RoomState};
 use crate::utils::math::{clamp_in_room, clamp_length};
 
+use super::animation::PlayerAnim;
 use super::components::*;
 
 pub fn spawn_player(
@@ -38,11 +39,11 @@ pub fn spawn_player(
     let crit = cfg.map(|c| c.crit_chance).unwrap_or(0.05);
 
     let mut entity = commands.spawn((SpriteBundle {
-        texture: assets.textures.white.clone(),
+        texture: assets.textures.player.clone(),
         transform: Transform::from_translation(Vec3::new(-220.0, 0.0, 50.0)),
         sprite: Sprite {
-            color: Color::srgb(0.35, 0.9, 0.45),
-            custom_size: Some(Vec2::splat(32.0)),
+            color: Color::WHITE,
+            custom_size: Some(Vec2::new(74.0, 60.0)),
             ..default()
         },
         ..default()
@@ -69,6 +70,10 @@ pub fn spawn_player(
         FacingDirection(Vec2::X),
         CritChance(crit),
         RewardModifiers::default(),
+        PlayerAnim {
+            state: AnimationState::Idle,
+            timer: Timer::from_seconds(0.12, TimerMode::Once),
+        },
     ));
     entity.insert((
         AttackCooldown::new(attack_cd),

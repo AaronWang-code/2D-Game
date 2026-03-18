@@ -20,12 +20,13 @@ pub fn player_dash_input_system(
             &mut DashState,
             &FacingDirection,
             &mut InvincibilityTimer,
+            &Handle<Image>,
             &Sprite,
         ),
         With<Player>,
     >,
 ) {
-    let Ok((tf, mut cd, mut dash, facing, mut inv, sprite)) = q.get_single_mut() else {
+    let Ok((tf, mut cd, mut dash, facing, mut inv, texture, sprite)) = q.get_single_mut() else {
         return;
     };
     cd.timer.tick(time.delta());
@@ -48,10 +49,11 @@ pub fn player_dash_input_system(
 
     afterimage::spawn_afterimage(
         &mut commands,
-        &assets,
+        texture.clone(),
         tf.translation().truncate(),
         sprite.color.with_alpha(0.45),
         sprite.custom_size.unwrap_or(Vec2::splat(32.0)),
+        sprite.flip_x,
     );
 }
 
@@ -64,6 +66,7 @@ pub fn update_dash_state(
             Entity,
             &GlobalTransform,
             &mut DashState,
+            &Handle<Image>,
             &Sprite,
             &AttackPower,
             &RewardModifiers,
@@ -71,7 +74,8 @@ pub fn update_dash_state(
         With<Player>,
     >,
 ) {
-    let Ok((player_e, tf, mut dash, sprite, attack_power, mods)) = q.get_single_mut() else {
+    let Ok((player_e, tf, mut dash, texture, sprite, attack_power, mods)) = q.get_single_mut()
+    else {
         return;
     };
     if !dash.active {
@@ -99,10 +103,11 @@ pub fn update_dash_state(
 
     afterimage::spawn_afterimage(
         &mut commands,
-        &assets,
+        texture.clone(),
         tf.translation().truncate(),
         sprite.color.with_alpha(0.25),
         sprite.custom_size.unwrap_or(Vec2::splat(32.0)),
+        sprite.flip_x,
     );
 }
 
