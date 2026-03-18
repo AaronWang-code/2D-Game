@@ -7,7 +7,7 @@ use crate::core::input::PlayerInputState;
 use crate::gameplay::combat::components::Projectile;
 use crate::gameplay::enemy::components::{Enemy, EnemyKind, EnemyType};
 use crate::gameplay::map::room::CurrentRoom;
-use crate::gameplay::player::components::{Gold, Health, Player};
+use crate::gameplay::player::components::{Energy, Gold, Health, Player};
 use crate::states::AppState;
 use crate::coop::components::CoopPlayer;
 
@@ -67,6 +67,7 @@ pub struct CoopPlayerStateMsg {
     pub id: u8,
     pub pos: (f32, f32),
     pub hp: f32,
+    pub energy: f32,
     pub gold: u32,
 }
 
@@ -197,8 +198,8 @@ pub fn coop_host_snapshot_system(
     mut net: ResMut<CoopNetState>,
     mut tick: Local<u32>,
     mut send_timer: Local<Timer>,
-    player_q: Query<(&GlobalTransform, &Health, &Gold), With<Player>>,
-    coop_player_q: Query<(&GlobalTransform, &Health), With<CoopPlayer>>,
+    player_q: Query<(&GlobalTransform, &Health, &Energy, &Gold), With<Player>>,
+    coop_player_q: Query<(&GlobalTransform, &Health, &Energy, Option<&Gold>), With<CoopPlayer>>,
     current_room: Option<Res<CurrentRoom>>,
     enemies_q: Query<(&EnemyKind, &GlobalTransform, &crate::gameplay::player::components::Health), With<Enemy>>,
     projectiles_q: Query<(&Projectile, &Transform)>,
@@ -219,27 +220,30 @@ pub fn coop_host_snapshot_system(
     let Some(sock) = net.socket.as_ref() else { return };
     let Some(peer) = net.peer else { return };
 
-    let Ok((p1_tf, p1_hp, p1_gold)) = player_q.get_single() else { return };
+    let Ok((p1_tf, p1_hp, p1_energy, p1_gold)) = player_q.get_single() else { return };
     let p1 = CoopPlayerStateMsg {
         id: 1,
         pos: (p1_tf.translation().x, p1_tf.translation().y),
         hp: p1_hp.current,
+        energy: p1_energy.current,
         gold: p1_gold.0,
     };
 
     let p2 = coop_player_q
         .get_single()
         .ok()
-        .map(|(tf, hp)| CoopPlayerStateMsg {
+        .map(|(tf, hp, energy, gold)| CoopPlayerStateMsg {
             id: 2,
             pos: (tf.translation().x, tf.translation().y),
             hp: hp.current,
-            gold: p1_gold.0,
+            energy: energy.current,
+            gold: gold.map(|g| g.0).unwrap_or(p1_gold.0),
         })
         .unwrap_or(CoopPlayerStateMsg {
             id: 2,
             pos: (p1_tf.translation().x + 40.0, p1_tf.translation().y),
             hp: p1_hp.current,
+            energy: p1_energy.current,
             gold: p1_gold.0,
         });
 

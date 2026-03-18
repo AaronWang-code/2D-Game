@@ -163,10 +163,12 @@ pub fn pvp_net_tick_system(
                 }
             }
             PvpMsg::Input(input) => {
-                // Host consumes input in simulation system via net.last_state? store in config? handled elsewhere
-                // We'll stash it in net.fire_events? no. We put it in a dedicated resource in systems module.
-                // This arm is handled by systems::pvp_host_simulation_system via PvpNetState::last_input_client.
-                net.last_input_from_client = Some(input);
+                let mut merged = net.last_input_from_client.unwrap_or_default();
+                merged.move_axis = input.move_axis;
+                merged.aim = input.aim;
+                merged.melee |= input.melee;
+                merged.ranged |= input.ranged;
+                net.last_input_from_client = Some(merged);
             }
             PvpMsg::State(st) => {
                 if config.mode == NetMode::Client {
@@ -194,6 +196,7 @@ pub fn pvp_net_tick_system(
 // Additional mutable field for host input capture.
 impl PvpNetState {
     pub fn clear_runtime(&mut self) {
+        self.last_input_from_client = None;
         self.last_state = None;
         self.fire_events.clear();
         self.winner = None;

@@ -385,7 +385,7 @@ pub fn enemy_death_system(
     layout: Res<FloorLayout>,
     current_room: Res<CurrentRoom>,
     mut room_state: ResMut<RoomState>,
-    mut player_q: Query<(&RewardModifiers, &mut PlayerHealth, &mut Gold), With<Player>>,
+    mut player_q: Query<(&RewardModifiers, &mut PlayerHealth, &mut Gold), Or<(With<Player>, With<CoopPlayer>)>>,
     enemy_info_q: Query<(&EnemyKind, Option<&Elite>)>,
     enemies_left: Query<Entity, With<Enemy>>,
     mut grace: ResMut<ClearGrace>,
@@ -407,7 +407,7 @@ pub fn enemy_death_system(
             _ => 10,
         } + (floor_bonus as u32) * 2;
         let reward_gold = base_gold + if is_elite { data.balance.elite_gold_bonus } else { 0 };
-        if let Ok((mods, mut hp, mut gold)) = player_q.get_single_mut() {
+        for (mods, mut hp, mut gold) in &mut player_q {
             gold.0 = gold.0.saturating_add(reward_gold);
             if mods.lifesteal_on_kill > 0.0 {
                 hp.current = (hp.current + mods.lifesteal_on_kill).min(hp.max);

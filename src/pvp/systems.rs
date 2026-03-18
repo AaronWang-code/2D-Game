@@ -2,7 +2,9 @@ use bevy::prelude::*;
 
 use crate::constants::{ROOM_HALF_HEIGHT, ROOM_HALF_WIDTH, UI_Z};
 use crate::core::assets::GameAssets;
+use crate::core::events::DamageAppliedEvent;
 use crate::core::input::PlayerInputState;
+use crate::gameplay::combat::components::Team;
 use crate::gameplay::player::components::{Health, Velocity};
 use crate::states::AppState;
 use crate::ui::widgets;
@@ -139,14 +141,13 @@ pub fn pvp_send_local_input_system(input: Res<PlayerInputState>, config: Res<Pvp
 }
 
 pub fn pvp_host_simulation_system(
-    mut commands: Commands,
     time: Res<Time>,
     input: Res<PlayerInputState>,
-    assets: Res<GameAssets>,
     mut match_state: ResMut<PvpMatchState>,
     config: Res<PvpNetConfig>,
     mut net: ResMut<PvpNetState>,
     mut next: ResMut<NextState<AppState>>,
+    mut damage_events: EventWriter<DamageAppliedEvent>,
     mut players: Query<(&PvpPlayerId, &mut Transform, &mut Velocity, &mut Health, &mut PvpLives, &mut PvpCooldowns)>,
 ) {
     if config.mode != NetMode::Host || !net.connected {
@@ -189,7 +190,7 @@ pub fn pvp_host_simulation_system(
     }
 
     // Resolve attacks.
-    resolve_attacks(&mut players, host_input, client_input, &mut net, &mut next);
+    resolve_attacks(&mut players, host_input, client_input, &mut net, &mut next, &mut damage_events);
 
     // Send snapshot at 20hz.
     match_state.state_send_timer.tick(time.delta());
@@ -206,6 +207,7 @@ fn resolve_attacks(
     client_input: PvpInputMsg,
     net: &mut PvpNetState,
     next: &mut NextState<AppState>,
+    damage_events: &mut EventWriter<DamageAppliedEvent>,
 ) {
     // Gather data.
     let mut p1 = None;
@@ -221,18 +223,18 @@ fn resolve_attacks(
 
     // Melee: short range, higher damage.
     if host_input.melee && p1_alive {
-        try_melee(1, 2, p1_pos, p2_pos, players);
+        try_melee(1, 2, p1_pos, p2_pos, players, damage_events);
     }
     if client_input.melee && p2_alive {
-        try_melee(2, 1, p2_pos, p1_pos, players);
+        try_melee(2, 1, p2_pos, p1_pos, players, damage_events);
     }
 
     // Ranged: hitscan + bullet visual.
     if host_input.ranged && p1_alive {
-        try_ranged(1, 2, p1_pos, Vec2::new(host_input.aim.0, host_input.aim.1), p2_pos, players, net);
+        try_ranged(1, 2, p1_pos, Vec2::new(host_input.aim.0, host_input.aim.1), p2_pos, players, net, damage_events);
     }
     if client_input.ranged && p2_alive {
-        try_ranged(2, 1, p2_pos, Vec2::new(client_input.aim.0, client_input.aim.1), p1_pos, players, net);
+        try_ranged(2, 1, p2_pos, Vec2::new(client_input.aim.0, client_input.aim.1), p1_pos, players, net, damage_events);
     }
 
     // Death / respawn / win.
@@ -280,8 +282,9 @@ fn try_melee(
     attacker_pos: Vec2,
     target_pos: Vec2,
     players: &mut Query<(&PvpPlayerId, &mut Transform, &mut Velocity, &mut Health, &mut PvpLives, &mut PvpCooldowns)>,
+    damage_events: &mut EventWriter<DamageAppliedEvent>,
 ) {
-    let range = 54.0;
+    let range = 86.0;
     if attacker_pos.distance(target_pos) > range {
         return;
     }
@@ -308,6 +311,14 @@ fn try_melee(
         if id.0 == target {
             hp.current = (hp.current - 18.0).max(0.0);
             vel.0 += dir * 420.0;
+            damage_events.send(DamageAppliedEvent {
+                target: Entity::PLACEHOLDER,
+                amount: 18.0,
+                attacker_team: pvp_team(attacker),
+                target_team: Some(pvp_team(target)),
+                is_crit: false,
+                pos: target_pos,
+            });
         }
     }
 }
@@ -320,6 +331,7 @@ fn try_ranged(
     target_pos: Vec2,
     players: &mut Query<(&PvpPlayerId, &mut Transform, &mut Velocity, &mut Health, &mut PvpLives, &mut PvpCooldowns)>,
     net: &mut PvpNetState,
+    damage_events: &mut EventWriter<DamageAppliedEvent>,
 ) {
     let mut can = false;
     for (id, _tf, _vel, _hp, _lives, cds) in players.iter_mut() {
@@ -366,6 +378,14 @@ fn try_ranged(
         if id.0 == target {
             hp.current = (hp.current - 10.0).max(0.0);
             vel.0 += dir * 280.0;
+            damage_events.send(DamageAppliedEvent {
+                target: Entity::PLACEHOLDER,
+                amount: 10.0,
+                attacker_team: pvp_team(attacker),
+                target_team: Some(pvp_team(target)),
+                is_crit: false,
+                pos: target_pos,
+            });
         }
     }
 }
@@ -440,6 +460,7 @@ pub fn pvp_client_apply_state_system(
     config: Res<PvpNetConfig>,
     mut net: ResMut<PvpNetState>,
     mut next: ResMut<NextState<AppState>>,
+    mut damage_events: EventWriter<DamageAppliedEvent>,
     mut players: Query<(&PvpPlayerId, &mut Transform, &mut Health, &mut PvpLives, &mut Velocity, &mut PvpCooldowns)>,
 ) {
     if config.mode != NetMode::Client || !net.connected {
@@ -449,12 +470,24 @@ pub fn pvp_client_apply_state_system(
 
     for (id, mut tf, mut hp, mut lives, mut vel, mut cds) in &mut players {
         let src = if id.0 == 1 { st.p1 } else { st.p2 };
+        let old_hp = hp.current;
         tf.translation.x = src.pos.0;
         tf.translation.y = src.pos.1;
         vel.0 = Vec2::ZERO;
         hp.current = src.hp;
         lives.lives = src.lives;
         cds.respawn = Timer::from_seconds(0.0, TimerMode::Once);
+        let loss = (old_hp - src.hp).max(0.0);
+        if loss > 0.0 {
+            damage_events.send(DamageAppliedEvent {
+                target: Entity::PLACEHOLDER,
+                amount: loss,
+                attacker_team: if id.0 == 1 { Team::Pvp2 } else { Team::Pvp1 },
+                target_team: Some(pvp_team(id.0)),
+                is_crit: false,
+                pos: tf.translation.truncate(),
+            });
+        }
     }
 
     if let Some(w) = net.winner {
@@ -481,6 +514,7 @@ pub fn pvp_bullet_visual_system(
 
 fn spawn_bullet_visual(commands: &mut Commands, assets: &GameAssets, origin: Vec2, dir: Vec2) {
     let speed = 860.0;
+    let max_range = 560.0;
     commands.spawn((
         SpriteBundle {
             texture: assets.textures.white.clone(),
@@ -493,8 +527,11 @@ fn spawn_bullet_visual(commands: &mut Commands, assets: &GameAssets, origin: Vec
             ..default()
         },
         PvpEntity,
-        PvpBullet { velocity: dir * speed },
-        crate::gameplay::combat::components::Lifetime(Timer::from_seconds(0.25, TimerMode::Once)),
+        PvpBullet {
+            velocity: dir * speed,
+            remaining_distance: max_range,
+        },
+        crate::gameplay::combat::components::Lifetime(Timer::from_seconds(max_range / speed, TimerMode::Once)),
         Name::new("PvpBullet"),
     ));
 }
@@ -502,12 +539,14 @@ fn spawn_bullet_visual(commands: &mut Commands, assets: &GameAssets, origin: Vec
 pub fn pvp_bullet_visual_system_move_and_despawn(
     mut commands: Commands,
     time: Res<Time>,
-    mut q: Query<(Entity, &PvpBullet, &mut Transform, &mut crate::gameplay::combat::components::Lifetime)>,
+    mut q: Query<(Entity, &mut PvpBullet, &mut Transform, &mut crate::gameplay::combat::components::Lifetime)>,
 ) {
-    for (e, bullet, mut tf, mut life) in &mut q {
-        tf.translation += (bullet.velocity * time.delta_seconds()).extend(0.0);
+    for (e, mut bullet, mut tf, mut life) in &mut q {
+        let step = bullet.velocity * time.delta_seconds();
+        tf.translation += step.extend(0.0);
+        bullet.remaining_distance -= step.length();
         life.0.tick(time.delta());
-        if life.0.finished() {
+        if life.0.finished() || bullet.remaining_distance <= 0.0 {
             commands.entity(e).despawn_recursive();
         }
     }
@@ -537,4 +576,37 @@ pub fn pvp_update_hud_system(
         "PVP（你是P{me}）  P1: HP {:.0} / Lives {}    P2: HP {:.0} / Lives {}",
         p1.0, p1.1, p2.0, p2.1
     );
+}
+pub fn pvp_update_hud_system_v2(
+    net: Res<PvpNetState>,
+    players: Query<(&PvpPlayerId, &Health, &PvpLives)>,
+    mut text_q: Query<&mut Text, With<PvpHudText>>,
+) {
+    let Ok(mut text) = text_q.get_single_mut() else { return };
+    let mut p1 = None;
+    let mut p2 = None;
+    for (id, hp, lives) in &players {
+        if id.0 == 1 {
+            p1 = Some((hp.current, lives.lives));
+        } else if id.0 == 2 {
+            p2 = Some((hp.current, lives.lives));
+        }
+    }
+    let (p1, p2) = match (p1, p2) {
+        (Some(a), Some(b)) => (a, b),
+        _ => return,
+    };
+    let me = net.my_id.unwrap_or(0);
+    text.sections[0].value = format!(
+        "PVP | 你是 P{me} | P1 HP {:.0} LIFE {} | P2 HP {:.0} LIFE {}",
+        p1.0, p1.1, p2.0, p2.1
+    );
+}
+
+fn pvp_team(id: u8) -> Team {
+    if id == 1 {
+        Team::Pvp1
+    } else {
+        Team::Pvp2
+    }
 }

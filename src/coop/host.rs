@@ -62,6 +62,7 @@ pub fn ensure_coop_player_spawned_system(
             current: energy_max,
             max: energy_max,
         },
+        Gold(0),
         Velocity::default(),
         MoveSpeed(move_speed),
         AttackPower(attack_power),

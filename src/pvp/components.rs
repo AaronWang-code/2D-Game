@@ -49,4 +49,5 @@ pub struct PvpTeam(pub Team);
 #[derive(Component, Debug, Clone, Copy)]
 pub struct PvpBullet {
     pub velocity: Vec2,
+    pub remaining_distance: f32,
 }

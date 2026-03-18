@@ -222,6 +222,7 @@ pub fn coop_client_apply_snapshot_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut next: ResMut<NextState<AppState>>,
     existing: Query<Entity, With<CoopClientEntity>>,
+    mut rendered_tick: Local<u32>,
 ) {
     if keyboard.just_pressed(KeyCode::Escape) {
         net.socket = None;
@@ -234,7 +235,11 @@ pub fn coop_client_apply_snapshot_system(
     if config.mode != NetMode::Client {
         return;
     }
-    let Some(snapshot) = net.last_snapshot.take() else { return };
+    let Some(snapshot) = net.last_snapshot.clone() else { return };
+    if *rendered_tick == snapshot.tick {
+        return;
+    }
+    *rendered_tick = snapshot.tick;
 
     // Simple approach: despawn all replicated entities then respawn.
     for e in &existing {
@@ -242,8 +247,9 @@ pub fn coop_client_apply_snapshot_system(
     }
 
     // Spawn players.
-    spawn_player_visual(&mut commands, &assets, snapshot.p1.pos, Color::srgb(0.35, 0.9, 0.45), "CoopP1", false);
-    spawn_player_visual(&mut commands, &assets, snapshot.p2.pos, Color::srgb(0.25, 0.9, 1.0), "CoopP2", true);
+    let my_id = net.my_id.unwrap_or(2);
+    spawn_player_visual(&mut commands, &assets, snapshot.p1.pos, Color::srgb(0.35, 0.9, 0.45), "CoopP1", my_id == 1);
+    spawn_player_visual(&mut commands, &assets, snapshot.p2.pos, Color::srgb(0.25, 0.9, 1.0), "CoopP2", my_id == 2);
 
     for e in snapshot.enemies {
         let color = match e.kind {
@@ -323,6 +329,23 @@ pub fn coop_client_hud_system(
         text.sections[0].value = format!(
             "合作模式  P1 HP {:.0} Gold {}   P2 HP {:.0} Gold {}",
             s.p1.hp, s.p1.gold, s.p2.hp, s.p2.gold
+        );
+    } else {
+        text.sections[0].value = "合作模式：等待同步...".to_string();
+    }
+}
+
+pub fn coop_client_hud_system_v2(net: Res<CoopNetState>, mut q: Query<&mut Text, With<CoopHudText>>) {
+    let Ok(mut text) = q.get_single_mut() else { return };
+    if let Some(s) = net.last_snapshot.as_ref() {
+        let (me, mate) = if net.my_id == Some(1) {
+            (&s.p1, &s.p2)
+        } else {
+            (&s.p2, &s.p1)
+        };
+        text.sections[0].value = format!(
+            "合作模式  你 HP {:.0} EN {:.0} Gold {}   队友 HP {:.0} EN {:.0} Gold {}",
+            me.hp, me.energy, me.gold, mate.hp, mate.energy, mate.gold
         );
     } else {
         text.sections[0].value = "合作模式：等待同步...".to_string();

@@ -20,7 +20,7 @@ impl Plugin for EffectsPlugin {
                 afterimage::update_afterimages,
                 damage_numbers::update_damage_numbers,
             )
-                .run_if(in_state(AppState::InGame)),
+                .run_if(in_state(AppState::InGame).or_else(in_state(AppState::PvpGame))),
         );
     }
 }

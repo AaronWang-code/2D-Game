@@ -39,7 +39,7 @@ impl Plugin for PvpPlugin {
                     systems::pvp_host_simulation_system,
                     systems::pvp_client_apply_state_system,
                     systems::pvp_send_local_input_system,
-                    systems::pvp_update_hud_system,
+                    systems::pvp_update_hud_system_v2,
                     systems::pvp_bullet_visual_system,
                     systems::pvp_bullet_visual_system_move_and_despawn,
                 )

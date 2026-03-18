@@ -31,8 +31,9 @@ impl Plugin for CoopPlugin {
                     net::coop_net_tick_system,
                     ui::coop_client_apply_snapshot_system,
                     ui::coop_client_send_input_system,
-                    ui::coop_client_hud_system,
+                    ui::coop_client_hud_system_v2,
                 )
+                    .chain()
                     .run_if(in_state(AppState::CoopGame)),
             )
             .add_systems(
@@ -58,6 +59,7 @@ impl Plugin for CoopPlugin {
                     host::coop_player_death_system,
                     net::coop_host_snapshot_system,
                 )
+                    .chain()
                     .run_if(in_state(AppState::InGame)),
             );
     }

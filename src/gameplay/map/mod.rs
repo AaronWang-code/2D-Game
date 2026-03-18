@@ -8,7 +8,9 @@ use bevy::prelude::*;
 
 use crate::gameplay::map::room::{CurrentRoom, FloorLayout};
 use crate::gameplay::map::transitions::RoomTransition;
-use crate::gameplay::player::components::{Gold, Player};
+use crate::gameplay::player::components::Gold;
+use crate::gameplay::player::components::Player;
+use crate::coop::components::CoopPlayer;
 use crate::states::AppState;
 use crate::states::RoomState;
 use bevy::utils::HashSet;
@@ -51,7 +53,7 @@ pub fn reward_room_gold_bonus_on_enter(
     layout: Option<Res<FloorLayout>>,
     current: Option<Res<CurrentRoom>>,
     mut seen: ResMut<RewardRoomGoldBonusSeen>,
-    mut gold_q: Query<&mut Gold, With<Player>>,
+    mut gold_q: Query<&mut Gold, Or<(With<Player>, With<CoopPlayer>)>>,
 ) {
     let (Some(layout), Some(current)) = (layout, current) else { return };
     if layout.is_changed() {
@@ -67,7 +69,7 @@ pub fn reward_room_gold_bonus_on_enter(
     if !seen.0.insert(current.0) {
         return;
     }
-    if let Ok(mut gold) = gold_q.get_single_mut() {
+    for mut gold in &mut gold_q {
         gold.0 = gold.0.saturating_add(100);
     }
 }
