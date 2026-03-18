@@ -34,6 +34,9 @@ pub struct EnemyAttackCooldown {
 }
 
 #[derive(Component, Debug, Clone, Copy)]
+pub struct Elite;
+
+#[derive(Component, Debug, Clone, Copy)]
 pub struct TeamMarker(pub Team);
 
 #[derive(Component, Debug, Clone, Copy)]
@@ -56,4 +59,3 @@ pub enum ChargerPhase {
     Charging,
     Stunned,
 }
-

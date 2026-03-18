@@ -44,6 +44,17 @@ pub fn title_text(assets: &GameAssets, text: impl Into<String>, size: f32) -> Te
     )
 }
 
+pub fn body_text(assets: &GameAssets, text: impl Into<String>, size: f32) -> TextBundle {
+    TextBundle::from_section(
+        text,
+        TextStyle {
+            font: assets.font.clone(),
+            font_size: size,
+            color: Color::srgb(0.92, 0.92, 0.95),
+        },
+    )
+}
+
 pub fn button_bundle() -> ButtonBundle {
     ButtonBundle {
         style: Style {
@@ -57,4 +68,3 @@ pub fn button_bundle() -> ButtonBundle {
         ..default()
     }
 }
-

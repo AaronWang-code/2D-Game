@@ -6,8 +6,17 @@ pub enum AppState {
     Loading,
     MainMenu,
     InGame,
+    MultiplayerMenu,
+    CoopMenu,
+    CoopLobby,
+    CoopGame,
+    PvpMenu,
+    PvpLobby,
+    PvpGame,
+    PvpResult,
     Paused,
     RewardSelect,
+    Shop,
     GameOver,
     Victory,
 }
@@ -20,4 +29,3 @@ pub enum RoomState {
     Cleared,
     BossFight,
 }
-

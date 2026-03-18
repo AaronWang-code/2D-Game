@@ -1,0 +1,31 @@
+(
+    version: 1,
+    floor: 1,
+    player: (
+        hp_current: 120.0,
+        hp_max: 120.0,
+        energy_current: 87.47655,
+        energy_max: 100.0,
+        gold: 60,
+        move_speed: 260.0,
+        attack_power: 18.0,
+        crit_chance: 0.05,
+        rewards: (
+            attack_speed_mult: 0.0,
+            max_hp_add: 20.0,
+            dash_cooldown_mult: 0.0,
+            lifesteal_on_kill: 0.0,
+            crit_add: 0.0,
+            move_speed_mult: 0.0,
+            dash_damage_trail: false,
+            bonus_projectile: false,
+        ),
+        attack_cd_s: 0.35,
+        dash_cd_s: 1.2,
+        ranged_cd_s: 0.29571426,
+    ),
+    enemy_spawn_count: Some(5),
+    achievements: [
+        FirstBlood,
+    ],
+)

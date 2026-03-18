@@ -73,17 +73,9 @@ fn enter_reward_selection(
         if ev.room == current.0 {
             if let Some(room) = layout.room(current.0) {
                 if room.room_type == RoomType::Boss {
-                    let boss_gives_victory = data
-                        .as_deref()
-                        .map(|d| d.balance.boss_room_gives_victory)
-                        .unwrap_or(true);
-                    if boss_gives_victory {
-                        // Boss 通关：选完奖励进入胜利结算。
-                        flow.go_victory = true;
-                    } else {
-                        // Boss 通关：选完奖励进入下一关（下一楼层）。
-                        flow.go_next_floor = true;
-                    }
+                    // Boss 通关：直接胜利结算。
+                    next_state.set(AppState::Victory);
+                    return;
                 }
             }
         }

@@ -12,7 +12,8 @@ pub struct MainMenuUi;
 
 #[derive(Component)]
 pub(crate) enum MenuButton {
-    Start,
+    SinglePlayer,
+    Multiplayer,
     Quit,
 }
 
@@ -30,9 +31,14 @@ pub fn setup_main_menu(mut commands: Commands, assets: Res<GameAssets>) {
                     ));
 
                     panel
-                        .spawn((widgets::button_bundle(), MenuButton::Start))
+                        .spawn((widgets::button_bundle(), MenuButton::SinglePlayer))
                         .with_children(|b| {
-                            b.spawn(widgets::title_text(&assets, "开始游戏", 22.0));
+                            b.spawn(widgets::title_text(&assets, "单人游戏", 22.0));
+                        });
+                    panel
+                        .spawn((widgets::button_bundle(), MenuButton::Multiplayer))
+                        .with_children(|b| {
+                            b.spawn(widgets::title_text(&assets, "联机游戏", 22.0));
                         });
                     panel
                         .spawn((widgets::button_bundle(), MenuButton::Quit))
@@ -54,10 +60,13 @@ pub fn menu_button_system(
             Interaction::Hovered => color.0 = Color::srgb(0.24, 0.28, 0.38),
             Interaction::None => color.0 = Color::srgb(0.18, 0.22, 0.30),
             Interaction::Pressed => match action {
-                MenuButton::Start => {
+                MenuButton::SinglePlayer => {
                     commands.insert_resource(FloorNumber(1));
                     commands.insert_resource(EnemySpawnCount { current: 0 });
                     next_state.set(AppState::InGame);
+                }
+                MenuButton::Multiplayer => {
+                    next_state.set(AppState::MultiplayerMenu);
                 }
                 MenuButton::Quit => {
                     let _ = exit.send(AppExit::Success);

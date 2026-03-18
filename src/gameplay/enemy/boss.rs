@@ -7,6 +7,7 @@ use crate::gameplay::combat::projectiles;
 use crate::gameplay::effects::screen_shake::ScreenShakeRequest;
 use crate::gameplay::enemy::components::{BossPatternTimer, BossPhase, EnemyKind, EnemyType};
 use crate::gameplay::player::components::{Health, Player};
+use crate::coop::components::CoopPlayer;
 use crate::utils::math::direction_to;
 
 pub fn boss_phase_controller(
@@ -35,14 +36,24 @@ pub fn boss_attack_patterns(
     time: Res<Time>,
     data: Res<GameDataRegistry>,
     assets: Res<crate::core::assets::GameAssets>,
-    player_q: Query<&GlobalTransform, With<Player>>,
+    player_q: Query<&GlobalTransform, Or<(With<Player>, With<CoopPlayer>)>>,
     mut q: Query<(&GlobalTransform, &BossPhase, &mut BossPatternTimer), With<EnemyKind>>,
     mut shake_ev: EventWriter<ScreenShakeRequest>,
 ) {
-    let Ok(player_tf) = player_q.get_single() else { return };
-    let player_pos = player_tf.translation().truncate();
+    let player_positions: Vec<Vec2> = player_q
+        .iter()
+        .map(|tf| tf.translation().truncate())
+        .collect();
+    if player_positions.is_empty() {
+        return;
+    }
     let Ok((boss_tf, phase, mut timer)) = q.get_single_mut() else { return };
     let boss_pos = boss_tf.translation().truncate();
+    let player_pos = player_positions
+        .iter()
+        .copied()
+        .min_by(|a, b| boss_pos.distance(*a).total_cmp(&boss_pos.distance(*b)))
+        .unwrap();
 
     timer.0.tick(time.delta());
     if !timer.0.finished() {
@@ -115,4 +126,3 @@ pub fn spawn_boss_bundle(data: &GameDataRegistry) -> (EnemyKind, BossPhase, Boss
         BossPatternTimer(Timer::from_seconds(1.2, TimerMode::Once)),
     )
 }
-

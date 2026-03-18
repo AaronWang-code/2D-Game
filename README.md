@@ -1,50 +1,44 @@
-# 迷雾回响（Echoes in the Fog）
+# Echoes in the Fog（迷雾回响）
 
-一个用 Rust + Bevy 编写的 2D 俯视角轻度 Roguelike 小游戏（课程项目 / MVP）。
+Rust + Bevy 的 2D 俯视角动作 / 轻度 Roguelike 小游戏课程项目（占位美术，玩法与架构优先）。
+
+## 技术栈
+- Rust
+- Bevy
+- serde + ron（配置驱动）
+- rand（随机）
 
 ## 运行方式
-
-本项目入口是 `src/main.rs`，运行时直接运行它即可。
-
-也可以使用标准 Rust 方式运行（推荐）：
-
 ```bash
-cargo run
+运行main.rs
 ```
 
-## 游戏怎么玩
-
-### 目标
-
-- 依次探索房间、击败敌人并通关 Boss 房。
-- 清理 Boss 房后会出现“奖励三选一”，选择后进入结算（胜利）。
-
-### 操作
-
-- `WASD`：移动
-- 鼠标左键：近战攻击
-- 鼠标右键：远程攻击
-- `Space`：冲刺/位移
-- `E`：与门交互（切换房间）
+## 操作
+- `WASD` / 方向键：移动
+- 鼠标左键：普通攻击
+- `Space` / 鼠标右键：冲刺
+- `E`：与门交互切房间
 - `Esc`：暂停/继续
-- 奖励选择界面：按 `1` / `2` / `3` 选择奖励
 
-### 提示
+## 目录结构（按需求文档）
+见 `rust_game_codex_requirements.txt` 中的建议结构；代码已按 `src/core`、`src/gameplay`、`src/ui`、`src/data` 等模块拆分。
 
-- 进入新房间后可能会锁门；击败房间内敌人即可解锁并继续前进。
-- 奖励会永久影响当前局的属性与战斗能力（例如移速、暴击、攻击间隔等）。
-- 失败会进入失败界面；胜利会进入胜利界面；两者都可按 `Enter` 返回主菜单。
+## 当前实现功能（MVP）
+- 状态：Loading / MainMenu / InGame / Paused / RewardSelect / GameOver / Victory
+- 玩家：移动、朝向、近战攻击、冲刺、无敌帧、死亡
+- 战斗：Hitbox/Hurtbox、伤害事件、击退、受击闪白、粒子
+- 敌人：近战追击、远程射击、冲锋、Boss（三阶段弹幕差异）
+- 房间：房间序列、门交互、锁门清怪开门、淡入淡出切换
+- 奖励：三选一（8 种）并真实影响数值/行为
+- UI：主菜单、HUD、暂停、奖励选择、失败/胜利
 
-## 配置（可选）
+## 配置驱动
+`assets/configs/*.ron`：
+- `player.ron`、`enemies.ron`、`boss.ron`、`rewards.ron`、`rooms.ron`、`game_balance.ron`
 
-游戏数值与房间序列由 `assets/configs/*.ron` 驱动，例如：
+## 后续可扩展方向
+- 真随机房间图生成（RoomGraph）
+- 更完善的机关/解谜房
+- 存档/读档
+- 替换美术与音频资源、加入更丰富动画与 Shader
 
-- `assets/configs/rooms.ron`：房间序列（Start/Normal/Reward/Boss）
-- `assets/configs/game_balance.ron`：整体平衡（例如 `boss_room_gives_victory`）
-
-## 目录结构（简述）
-
-- `src/core`：输入、资源加载等基础设施
-- `src/gameplay`：战斗/敌人/地图/进度/奖励等核心玩法
-- `src/ui`：主菜单、HUD、暂停、奖励选择、结算界面
-- `src/data`：配置定义与加载

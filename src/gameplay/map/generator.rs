@@ -18,6 +18,7 @@ pub fn generate_and_spawn_floor(
     existing_current: Option<Res<CurrentRoom>>,
     existing_room_state: Option<Res<RoomState>>,
     existing_transition: Option<Res<RoomTransition>>,
+    mut visited: Option<ResMut<crate::gameplay::map::VisitedRooms>>,
 ) {
     // 从 RewardSelect/Paused 返回 InGame 时也会触发 OnEnter(InGame)。
     // 这时不应重置本层布局，否则会出现“回到起始房/状态被重置”等问题。
@@ -69,6 +70,10 @@ pub fn generate_and_spawn_floor(
     };
     commands.insert_resource(CurrentRoom(layout.current));
     commands.insert_resource(layout);
+    if let Some(mut visited) = visited {
+        visited.0.clear();
+        visited.0.insert(RoomId(0));
+    }
 
     spawn_current_room(&mut commands, &spawn_ev);
 }
@@ -77,4 +82,3 @@ pub fn spawn_current_room(commands: &mut Commands, _spawn_ev: &EventWriter<Spawn
     commands.spawn((InGameEntity, Name::new("RoomRoot")));
     // Room content is spawned by other systems after resources exist; see tiles/doors plugins.
 }
-

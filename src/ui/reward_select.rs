@@ -59,7 +59,7 @@ pub fn cleanup_reward_ui(mut commands: Commands, q: Query<Entity, With<RewardUi>
 fn reward_title(r: RewardType) -> &'static str {
     match r {
         RewardType::IncreaseAttackSpeed => "攻速提升（攻击更快）",
-        RewardType::IncreaseMaxHealth => "生命上限 +20（并恢复）",
+        RewardType::IncreaseMaxHealth => "生命上限 +20%（并恢复）",
         RewardType::ReduceDashCooldown => "冲刺冷却缩短",
         RewardType::LifeStealOnKill => "击杀回复 3 点生命",
         RewardType::IncreaseCritChance => "暴击率 +5%",

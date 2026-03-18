@@ -4,6 +4,8 @@ use bevy::prelude::*;
 pub enum Team {
     Player,
     Enemy,
+    Pvp1,
+    Pvp2,
 }
 
 #[derive(Component, Debug, Clone, Copy)]
@@ -33,4 +35,3 @@ pub struct Lifetime(pub Timer);
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Knockback(pub Vec2);
-

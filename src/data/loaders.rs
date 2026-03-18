@@ -48,6 +48,17 @@ fn default_registry() -> GameDataRegistry {
             dash_duration_s: 0.12,
             invincibility_s: 0.35,
             crit_chance: 0.05,
+            energy_max: 100.0,
+            energy_regen_per_s: 12.0,
+            dash_energy_cost: 25.0,
+            ranged_energy_cost: 12.0,
+            skill1_energy_cost: 45.0,
+            heal_energy_cost_per_s: 20.0,
+            heal_hp_per_s: 18.0,
+            skill1_cooldown_s: 1.1,
+            ranged_base_cooldown_s: 0.45,
+            ranged_min_cooldown_s: 0.18,
+            ranged_ramp_max: 8,
         },
         enemies: EnemiesConfig {
             melee_chaser: EnemyStatsConfig {
@@ -96,7 +107,10 @@ fn default_registry() -> GameDataRegistry {
             boss_room_gives_victory: true,
             floor_rooms: 4,
             enemy_types: vec![],
+            elite_chance: 0.25,
+            elite_hp_mult: 1.8,
+            elite_damage_mult: 1.4,
+            elite_gold_bonus: 10,
         },
     }
 }
-

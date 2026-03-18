@@ -3,6 +3,8 @@ pub mod combat;
 pub mod components;
 pub mod dash;
 pub mod systems;
+pub mod combo;
+pub mod skills;
 
 use bevy::prelude::*;
 
@@ -17,6 +19,8 @@ impl Plugin for PlayerPlugin {
                 Update,
                 (
                     systems::player_invincibility_system,
+                    systems::player_energy_regen_system,
+                    systems::player_heal_channel_system,
                     systems::player_move_system,
                     systems::player_facing_system,
                     combat::player_attack_input_system,
@@ -24,6 +28,8 @@ impl Plugin for PlayerPlugin {
                     combat::update_attack_cooldowns,
                     dash::player_dash_input_system,
                     dash::update_dash_state,
+                    skills::player_skill1_input_system,
+                    combo::update_combo_state,
                     animation::update_player_animation_state,
                     animation::animate_player_sprite,
                     systems::player_death_system,

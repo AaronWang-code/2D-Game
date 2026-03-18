@@ -1,0 +1,1127 @@
+Rust 2D 小游戏项目需求说明（交给 Codex 的开发任务书）
+==================================================
+
+项目名称（暂定）
+----------------
+《迷雾回响 / Echoes in the Fog》
+
+项目目标
+--------
+使用 Rust 开发一个“2D 俯视角动作 + 轻度 Roguelike + 房间探索 + 轻解谜”的小游戏。
+要求游戏画面相对精美、系统设计完整、代码结构清晰，不能只是一个简单 demo。
+该项目用于课程大作业，因此除了“能玩”之外，还必须体现：
+1. 合理的软件工程结构；
+2. 明确的模块划分；
+3. 足够的代码复杂度；
+4. 可扩展性；
+5. 可演示性；
+6. 一定的美术表现与交互效果。
+
+一、总体开发要求
+----------------
+1. 使用 Rust 语言开发。
+2. 推荐框架：
+   - bevy
+   - bevy_rapier2d（碰撞 / 物理）
+   - bevy_kira_audio（音频）
+   - serde + ron/toml/json（配置驱动）
+   - rand（随机生成）
+3. 游戏为 2D 俯视角，不做横版跳跃。
+4. 必须采用“模块化 + 可维护”的目录结构。
+5. 必须使用清晰的状态管理和资源管理。
+6. 应尽量体现 ECS 思路（如果使用 Bevy，则自然采用 ECS）。
+7. 最终结果必须能运行，至少包含：
+   - 主菜单
+   - 开始游戏
+   - 角色移动
+   - 普通攻击
+   - 冲刺技能
+   - 至少 3 类敌人
+   - 房间切换
+   - 清怪开门
+   - 1 个 Boss
+   - 奖励三选一系统
+   - HUD/UI
+   - 游戏失败与胜利界面
+8. 必须包含一定的视觉效果：
+   - 角色移动/攻击反馈
+   - 怪物受击反馈
+   - 简单粒子特效
+   - 相机跟随
+   - 屏幕震动（至少 Boss 或技能触发时）
+   - 房间切换过渡效果
+9. 必须保证代码不是“全堆在 main.rs 里”，要拆分成多个模块文件。
+10. 尽量保证后续方便继续添加内容。
+
+二、游戏设定与核心玩法
+----------------------
+游戏类型：
+2D 俯视角动作探索 Roguelike。
+
+背景设定：
+玩家进入一座被迷雾笼罩的实验塔，每一层都由多个房间组成。玩家需要在房间中战斗、探索、解谜、获得强化，并最终击败该层 Boss，前往下一层。
+
+核心循环：
+进入楼层 -> 探索房间 -> 清理敌人 / 完成简单机关 -> 获得奖励 -> 强化角色 -> 挑战 Boss -> 进入下一层
+
+核心体验目标：
+1. 操作流畅；
+2. 战斗有反馈；
+3. 有成长感；
+4. 房间探索有节奏；
+5. UI 和特效让游戏看起来不是简单作业。
+
+三、最小可交付版本（MVP）
+-------------------------
+必须优先完成以下内容：
+
+A. 基础框架
+1. 游戏启动与资源加载；
+2. 主菜单；
+3. 游戏状态切换；
+4. 关卡初始化；
+5. 游戏结束界面；
+6. 基础音频系统；
+7. HUD 显示。
+
+B. 玩家系统
+1. WASD / 方向键移动；
+2. 鼠标或方向攻击（可任选一种实现方式，但要完整）；
+3. 冲刺技能；
+4. HP / 能量 / 冷却；
+5. 受伤无敌帧；
+6. 死亡逻辑；
+7. 动画状态切换（至少 Idle / Move / Attack / Dash / Hurt / Dead）。
+
+C. 战斗系统
+1. 玩家攻击命中敌人；
+2. 敌人攻击命中玩家；
+3. 伤害计算；
+4. 击退效果；
+5. 受击闪烁；
+6. 攻击冷却；
+7. 子弹或近战范围判定。
+
+D. 敌人系统
+至少 3 类敌人：
+1. 近战追击型；
+2. 远程射击型；
+3. 冲锋型；
+并至少 1 个 Boss，Boss 要有多阶段逻辑。
+
+E. 房间系统
+1. 房间制地图，不做大地图；
+2. 初始房、普通战斗房、奖励房、Boss 房；
+3. 玩家进入战斗房后关门；
+4. 敌人全部消灭后开门；
+5. 房间切换时镜头平滑移动或淡入淡出。
+
+F. 奖励系统
+每清理一个关键房间后，弹出三选一奖励：
+例如：
+- 攻击速度提升
+- 冲刺冷却缩短
+- 最大生命提升
+- 暴击率提升
+- 击杀回复少量生命
+奖励至少实现 6 种。
+
+G. UI 系统
+1. 主菜单 UI；
+2. 暂停 UI；
+3. HUD（血条、技能冷却、当前层数、房间信息）；
+4. 奖励选择界面；
+5. Boss 血条；
+6. Game Over / Victory 界面。
+
+四、建议的项目目录结构
+----------------------
+请按如下方式组织项目：
+
+project_root/
+├─ Cargo.toml
+├─ assets/
+│  ├─ audio/
+│  │  ├─ bgm_menu.ogg
+│  │  ├─ bgm_battle.ogg
+│  │  ├─ sfx_attack.ogg
+│  │  ├─ sfx_dash.ogg
+│  │  ├─ sfx_hit.ogg
+│  │  ├─ sfx_enemy_die.ogg
+│  │  └─ sfx_ui_click.ogg
+│  ├─ fonts/
+│  │  └─ main_font.ttf
+│  ├─ textures/
+│  │  ├─ player/
+│  │  ├─ enemies/
+│  │  ├─ boss/
+│  │  ├─ tiles/
+│  │  ├─ effects/
+│  │  ├─ ui/
+│  │  └─ items/
+│  ├─ configs/
+│  │  ├─ player.ron
+│  │  ├─ enemies.ron
+│  │  ├─ boss.ron
+│  │  ├─ rewards.ron
+│  │  ├─ rooms.ron
+│  │  └─ game_balance.ron
+│  └─ shaders/               （可选）
+├─ src/
+│  ├─ main.rs
+│  ├─ app.rs
+│  ├─ states.rs
+│  ├─ constants.rs
+│  ├─ prelude.rs
+│  ├─ utils/
+│  │  ├─ mod.rs
+│  │  ├─ math.rs
+│  │  ├─ collision.rs
+│  │  ├─ rng.rs
+│  │  ├─ timers.rs
+│  │  └─ easing.rs
+│  ├─ core/
+│  │  ├─ mod.rs
+│  │  ├─ camera.rs
+│  │  ├─ audio.rs
+│  │  ├─ input.rs
+│  │  ├─ assets.rs
+│  │  ├─ save.rs
+│  │  └─ events.rs
+│  ├─ gameplay/
+│  │  ├─ mod.rs
+│  │  ├─ player/
+│  │  │  ├─ mod.rs
+│  │  │  ├─ components.rs
+│  │  │  ├─ systems.rs
+│  │  │  ├─ animation.rs
+│  │  │  ├─ combat.rs
+│  │  │  └─ dash.rs
+│  │  ├─ enemy/
+│  │  │  ├─ mod.rs
+│  │  │  ├─ components.rs
+│  │  │  ├─ systems.rs
+│  │  │  ├─ ai.rs
+│  │  │  ├─ spawner.rs
+│  │  │  └─ boss.rs
+│  │  ├─ combat/
+│  │  │  ├─ mod.rs
+│  │  │  ├─ components.rs
+│  │  │  ├─ systems.rs
+│  │  │  ├─ hitbox.rs
+│  │  │  ├─ damage.rs
+│  │  │  └─ projectiles.rs
+│  │  ├─ map/
+│  │  │  ├─ mod.rs
+│  │  │  ├─ room.rs
+│  │  │  ├─ generator.rs
+│  │  │  ├─ transitions.rs
+│  │  │  ├─ doors.rs
+│  │  │  └─ tiles.rs
+│  │  ├─ rewards/
+│  │  │  ├─ mod.rs
+│  │  │  ├─ data.rs
+│  │  │  ├─ systems.rs
+│  │  │  └─ apply.rs
+│  │  ├─ puzzle/
+│  │  │  ├─ mod.rs
+│  │  │  ├─ pressure_plate.rs
+│  │  │  ├─ switch_order.rs
+│  │  │  └─ trap.rs
+│  │  ├─ progression/
+│  │  │  ├─ mod.rs
+│  │  │  ├─ floor.rs
+│  │  │  ├─ difficulty.rs
+│  │  │  └─ stats.rs
+│  │  └─ effects/
+│  │     ├─ mod.rs
+│  │     ├─ particles.rs
+│  │     ├─ screen_shake.rs
+│  │     ├─ flash.rs
+│  │     └─ afterimage.rs
+│  ├─ ui/
+│  │  ├─ mod.rs
+│  │  ├─ menu.rs
+│  │  ├─ hud.rs
+│  │  ├─ pause.rs
+│  │  ├─ reward_select.rs
+│  │  ├─ game_over.rs
+│  │  └─ widgets.rs
+│  └─ data/
+│     ├─ mod.rs
+│     ├─ definitions.rs
+│     ├─ loaders.rs
+│     └─ registry.rs
+└─ README.md
+
+五、每个主要文件/模块的职责说明
+------------------------------
+1. src/main.rs
+职责：
+- 程序入口；
+- 创建 App；
+- 添加插件；
+- 设置窗口、清屏颜色、全局资源；
+- 启动游戏。
+
+建议函数：
+- fn main()
+
+2. src/app.rs
+职责：
+- 统一注册所有插件和系统；
+- 将各功能模块组织起来。
+
+建议内容：
+- pub struct GamePlugin;
+- impl Plugin for GamePlugin
+
+建议函数：
+- fn build(&self, app: &mut App)
+
+3. src/states.rs
+职责：
+- 定义游戏状态；
+- 管理菜单、加载、战斗、暂停、奖励选择、结算等状态。
+
+建议枚举：
+- AppState
+  - Loading
+  - MainMenu
+  - InGame
+  - Paused
+  - RewardSelect
+  - GameOver
+  - Victory
+
+- RoomState
+  - Idle
+  - Locked
+  - Cleared
+  - BossFight
+
+4. src/constants.rs
+职责：
+- 存放游戏中的常量定义。
+
+示例：
+- 窗口宽高；
+- 玩家基础速度；
+- 默认生命值；
+- 敌人碰撞层；
+- 攻击判定时间；
+- UI 尺寸。
+
+5. src/prelude.rs
+职责：
+- 统一导出常用类型，减少 use 冗长。
+
+6. src/core/assets.rs
+职责：
+- 管理贴图、音频、字体等资源句柄；
+- 统一预加载；
+- 提供资源访问接口。
+
+建议结构体：
+- GameAssets
+- TextureHandles
+- AudioHandles
+- FontHandles
+
+建议函数：
+- fn load_game_assets(...)
+- fn check_assets_ready(...)
+- fn setup_texture_atlas(...)
+
+7. src/core/input.rs
+职责：
+- 输入映射；
+- 统一处理玩家输入；
+- 可选支持键位配置扩展。
+
+建议结构体：
+- PlayerInputState
+
+建议函数：
+- fn collect_player_input(...)
+- fn map_keyboard_to_actions(...)
+- fn map_mouse_to_actions(...)
+
+8. src/core/audio.rs
+职责：
+- 播放背景音乐和音效；
+- 切换不同场景音频；
+- 控制音量。
+
+建议函数：
+- fn play_menu_bgm(...)
+- fn play_battle_bgm(...)
+- fn play_sfx_attack(...)
+- fn play_sfx_dash(...)
+- fn stop_all_bgm(...)
+
+9. src/core/camera.rs
+职责：
+- 相机跟随；
+- 房间切换镜头移动；
+- 屏幕震动。
+
+建议函数：
+- fn setup_camera(...)
+- fn camera_follow_player(...)
+- fn camera_move_to_room(...)
+- fn apply_screen_shake(...)
+
+10. src/core/events.rs
+职责：
+- 定义游戏内部事件。
+
+建议事件：
+- DamageEvent
+- DeathEvent
+- RoomClearedEvent
+- RewardChosenEvent
+- DoorOpenEvent
+- SpawnEnemyEvent
+- BossPhaseChangeEvent
+
+11. src/gameplay/player/components.rs
+职责：
+- 定义玩家相关组件。
+
+建议组件：
+- Player
+- Health
+- Energy
+- Velocity
+- MoveSpeed
+- AttackPower
+- AttackCooldown
+- DashCooldown
+- InvincibilityTimer
+- FacingDirection
+- AnimationState
+- CritChance
+- RewardModifiers
+
+12. src/gameplay/player/systems.rs
+职责：
+- 玩家移动；
+- 朝向更新；
+- 状态切换；
+- 受伤判定。
+
+建议函数：
+- fn spawn_player(...)
+- fn player_move_system(...)
+- fn player_rotation_or_facing_system(...)
+- fn player_hurt_system(...)
+- fn player_death_system(...)
+- fn player_invincibility_system(...)
+
+13. src/gameplay/player/combat.rs
+职责：
+- 玩家攻击逻辑；
+- 创建攻击判定或子弹。
+
+建议函数：
+- fn player_attack_input_system(...)
+- fn spawn_player_melee_hitbox(...)
+- fn spawn_player_projectile(...)
+- fn update_attack_cooldowns(...)
+- fn apply_player_attack_modifiers(...)
+
+14. src/gameplay/player/dash.rs
+职责：
+- 冲刺系统。
+
+建议函数：
+- fn player_dash_input_system(...)
+- fn start_dash(...)
+- fn update_dash_state(...)
+- fn end_dash(...)
+- fn dash_afterimage_system(...)
+
+15. src/gameplay/player/animation.rs
+职责：
+- 管理玩家动画状态；
+- Sprite sheet 帧切换。
+
+建议函数：
+- fn update_player_animation_state(...)
+- fn animate_player_sprite(...)
+
+16. src/gameplay/enemy/components.rs
+职责：
+- 定义敌人组件与类型。
+
+建议组件/枚举：
+- Enemy
+- EnemyType
+  - MeleeChaser
+  - RangedShooter
+  - Charger
+  - Boss
+- EnemyStats
+- AggroRange
+- AttackRange
+- AIState
+- PatrolData
+- BossPhase
+
+17. src/gameplay/enemy/ai.rs
+职责：
+- 敌人行为树/状态机；
+- 根据距离和状态切换行为。
+
+建议函数：
+- fn update_enemy_ai(...)
+- fn melee_enemy_ai(...)
+- fn ranged_enemy_ai(...)
+- fn charger_enemy_ai(...)
+- fn choose_target_direction(...)
+- fn try_start_enemy_attack(...)
+
+18. src/gameplay/enemy/systems.rs
+职责：
+- 敌人生成、移动、攻击、死亡。
+
+建议函数：
+- fn spawn_enemy(...)
+- fn enemy_move_system(...)
+- fn enemy_attack_system(...)
+- fn enemy_take_damage_system(...)
+- fn enemy_death_system(...)
+- fn despawn_dead_enemies(...)
+
+19. src/gameplay/enemy/spawner.rs
+职责：
+- 管理每个房间的敌人刷新方案。
+
+建议函数：
+- fn spawn_room_enemies(...)
+- fn spawn_enemy_wave(...)
+- fn spawn_elite_enemy(...)
+- fn get_spawn_points_for_room(...)
+
+20. src/gameplay/enemy/boss.rs
+职责：
+- Boss 专属行为；
+- 多阶段切换；
+- 技能模式变化；
+- Boss 血条同步。
+
+建议函数：
+- fn spawn_boss(...)
+- fn boss_phase_controller(...)
+- fn boss_attack_pattern_one(...)
+- fn boss_attack_pattern_two(...)
+- fn boss_attack_pattern_three(...)
+- fn trigger_boss_phase_change(...)
+
+21. src/gameplay/combat/components.rs
+职责：
+- 战斗基础组件。
+
+建议组件：
+- Hitbox
+- Hurtbox
+- Damage
+- Knockback
+- Lifetime
+- Team
+- Projectile
+- CritModifier
+
+22. src/gameplay/combat/hitbox.rs
+职责：
+- 命中检测；
+- 判定攻击是否命中 Hurtbox。
+
+建议函数：
+- fn detect_hitbox_hurtbox_overlap(...)
+- fn handle_melee_hit(...)
+- fn handle_projectile_hit(...)
+
+23. src/gameplay/combat/damage.rs
+职责：
+- 统一伤害处理。
+
+建议函数：
+- fn apply_damage_events(...)
+- fn calculate_final_damage(...)
+- fn apply_knockback(...)
+- fn trigger_hit_flash(...)
+- fn trigger_death_event(...)
+
+24. src/gameplay/combat/projectiles.rs
+职责：
+- 子弹生成、移动、碰撞、销毁。
+
+建议函数：
+- fn spawn_projectile(...)
+- fn move_projectiles(...)
+- fn despawn_expired_projectiles(...)
+- fn projectile_collision_system(...)
+
+25. src/gameplay/map/room.rs
+职责：
+- 房间数据结构定义。
+
+建议结构体：
+- RoomId
+- RoomType
+  - Start
+  - Normal
+  - Reward
+  - Puzzle
+  - Boss
+- RoomData
+- RoomBounds
+- RoomConnections
+
+26. src/gameplay/map/generator.rs
+职责：
+- 生成一层的房间布局。
+
+建议函数：
+- fn generate_floor_layout(...)
+- fn generate_room_graph(...)
+- fn assign_room_types(...)
+- fn choose_boss_room(...)
+- fn choose_reward_rooms(...)
+
+说明：
+MVP 阶段不要求复杂随机地图，但代码层面要预留扩展能力。
+
+27. src/gameplay/map/doors.rs
+职责：
+- 门的生成和开关控制。
+
+建议函数：
+- fn spawn_room_doors(...)
+- fn lock_room_doors(...)
+- fn unlock_room_doors(...)
+- fn update_door_visuals(...)
+
+28. src/gameplay/map/transitions.rs
+职责：
+- 玩家穿门切换房间；
+- 相机移动与过渡。
+
+建议函数：
+- fn detect_room_exit(...)
+- fn transition_to_room(...)
+- fn fade_out_in_transition(...)
+- fn reposition_player_on_room_entry(...)
+
+29. src/gameplay/map/tiles.rs
+职责：
+- 地板、墙体、障碍物布置。
+
+建议函数：
+- fn spawn_room_tiles(...)
+- fn spawn_room_walls(...)
+- fn spawn_obstacles(...)
+
+30. src/gameplay/rewards/data.rs
+职责：
+- 奖励枚举和数据定义。
+
+建议枚举：
+- RewardType
+  - IncreaseAttackSpeed
+  - IncreaseMaxHealth
+  - ReduceDashCooldown
+  - LifeStealOnKill
+  - IncreaseCritChance
+  - IncreaseMoveSpeed
+  - DashDamageTrail
+  - BonusProjectile
+
+31. src/gameplay/rewards/systems.rs
+职责：
+- 奖励三选一 UI 与逻辑；
+- 生成候选奖励。
+
+建议函数：
+- fn enter_reward_selection(...)
+- fn generate_reward_choices(...)
+- fn handle_reward_choice_input(...)
+- fn exit_reward_selection(...)
+
+32. src/gameplay/rewards/apply.rs
+职责：
+- 将选择的奖励真正应用到玩家属性。
+
+建议函数：
+- fn apply_reward_to_player(...)
+- fn recompute_player_stats(...)
+
+33. src/gameplay/puzzle/pressure_plate.rs
+职责：
+- 压力板解谜。
+
+建议函数：
+- fn spawn_pressure_plate(...)
+- fn update_pressure_plate_state(...)
+- fn check_pressure_plate_completion(...)
+
+34. src/gameplay/puzzle/switch_order.rs
+职责：
+- 顺序激活机关。
+
+建议函数：
+- fn spawn_switch_sequence(...)
+- fn handle_switch_interaction(...)
+- fn validate_switch_order(...)
+
+35. src/gameplay/puzzle/trap.rs
+职责：
+- 陷阱伤害区域或定时尖刺。
+
+建议函数：
+- fn spawn_traps(...)
+- fn update_trap_timers(...)
+- fn trap_damage_system(...)
+
+36. src/gameplay/progression/floor.rs
+职责：
+- 关卡推进；
+- 楼层编号；
+- 进入下一层。
+
+建议函数：
+- fn setup_floor(...)
+- fn complete_floor(...)
+- fn go_to_next_floor(...)
+
+37. src/gameplay/progression/difficulty.rs
+职责：
+- 难度成长曲线。
+
+建议函数：
+- fn scale_enemy_stats_by_floor(...)
+- fn scale_boss_stats_by_floor(...)
+- fn get_floor_difficulty_multiplier(...)
+
+38. src/gameplay/progression/stats.rs
+职责：
+- 记录击杀数、通关时间、伤害统计等。
+
+建议结构体：
+- RunStats
+
+建议函数：
+- fn update_run_stats(...)
+- fn record_enemy_kill(...)
+- fn record_damage_done(...)
+- fn record_damage_taken(...)
+
+39. src/gameplay/effects/particles.rs
+职责：
+- 粒子效果。
+
+建议函数：
+- fn spawn_hit_particles(...)
+- fn spawn_dash_particles(...)
+- fn update_particles(...)
+- fn despawn_finished_particles(...)
+
+40. src/gameplay/effects/screen_shake.rs
+职责：
+- 屏幕震动逻辑。
+
+建议函数：
+- fn trigger_screen_shake(...)
+- fn update_screen_shake(...)
+
+41. src/gameplay/effects/flash.rs
+职责：
+- 受击闪白/受击高亮。
+
+建议函数：
+- fn apply_flash_effect(...)
+- fn update_flash_effect(...)
+
+42. src/gameplay/effects/afterimage.rs
+职责：
+- 冲刺残影。
+
+建议函数：
+- fn spawn_afterimage(...)
+- fn update_afterimages(...)
+- fn despawn_afterimages(...)
+
+43. src/ui/menu.rs
+职责：
+- 主菜单界面。
+
+建议函数：
+- fn setup_main_menu(...)
+- fn menu_button_system(...)
+- fn cleanup_main_menu(...)
+
+44. src/ui/hud.rs
+职责：
+- 游戏内 HUD。
+
+建议函数：
+- fn setup_hud(...)
+- fn update_health_bar(...)
+- fn update_energy_bar(...)
+- fn update_dash_cooldown_ui(...)
+- fn update_floor_text(...)
+- fn update_boss_health_bar(...)
+
+45. src/ui/pause.rs
+职责：
+- 暂停菜单。
+
+建议函数：
+- fn setup_pause_menu(...)
+- fn toggle_pause(...)
+- fn pause_menu_input_system(...)
+- fn cleanup_pause_menu(...)
+
+46. src/ui/reward_select.rs
+职责：
+- 奖励选择界面。
+
+建议函数：
+- fn setup_reward_ui(...)
+- fn update_reward_ui(...)
+- fn reward_ui_input_system(...)
+- fn cleanup_reward_ui(...)
+
+47. src/ui/game_over.rs
+职责：
+- Game Over 和 Victory 页面。
+
+建议函数：
+- fn setup_game_over_screen(...)
+- fn setup_victory_screen(...)
+- fn end_screen_input_system(...)
+
+48. src/data/definitions.rs
+职责：
+- 配置文件映射的数据结构定义。
+
+例如：
+- PlayerConfig
+- EnemyConfig
+- BossConfig
+- RewardConfig
+- RoomConfig
+
+49. src/data/loaders.rs
+职责：
+- 读取配置文件，反序列化成 Rust 结构体。
+
+建议函数：
+- fn load_player_config(...)
+- fn load_enemy_config(...)
+- fn load_reward_config(...)
+- fn load_room_config(...)
+
+50. src/data/registry.rs
+职责：
+- 统一存放全局定义数据。
+
+建议结构体：
+- GameDataRegistry
+
+六、必须实现的核心系统设计
+--------------------------
+1. 状态系统
+必须将游戏分为多个状态，而不是一团逻辑混写。
+至少包含：
+- Loading
+- MainMenu
+- InGame
+- Paused
+- RewardSelect
+- GameOver
+- Victory
+
+2. 实体组件系统（ECS）
+所有主要对象都尽量使用组件组织：
+- 玩家
+- 敌人
+- 子弹
+- 门
+- 陷阱
+- 奖励实体
+- Boss
+- 特效实体
+
+3. 事件系统
+推荐通过 Event 分发处理关键行为：
+- 伤害事件
+- 死亡事件
+- 房间清理事件
+- 门开启事件
+- 奖励选择事件
+- Boss 阶段切换事件
+
+4. 配置驱动系统
+基础数值不要全硬编码，至少将以下内容配置化：
+- 玩家基础属性
+- 敌人属性
+- Boss 属性
+- 奖励属性
+- 房间生成参数
+
+5. 战斗反馈系统
+必须体现“打击感”：
+- 命中时闪白
+- 击退
+- 音效
+- 粒子
+- 屏幕震动（适度）
+
+6. 房间推进系统
+进入房间后：
+- 判断房间类型
+- 如果是战斗房，则锁门
+- 敌人刷出
+- 全灭后发送 RoomClearedEvent
+- 开门
+- 可进入下一房间
+
+七、推荐的具体玩法规则
+----------------------
+1. 玩家属性
+基础属性：
+- HP
+- Move Speed
+- Attack Power
+- Attack Speed
+- Crit Chance
+- Dash Cooldown
+- Energy（可选）
+
+2. 玩家攻击方式
+推荐任选一种主方案：
+方案 A：近战挥砍 + 冲刺
+方案 B：远程能量弹 + 冲刺
+方案 C：近战主攻 + 远程技能副手
+
+推荐优先实现方案 A 或 C，因为观感更强。
+
+3. 敌人设计
+(1) 近战追击怪
+- 持续追玩家
+- 接近后近战攻击
+
+(2) 远程射击怪
+- 与玩家保持距离
+- 周期性发射投射物
+
+(3) 冲锋怪
+- 预警短暂停顿
+- 直线高速冲锋
+- 撞墙后硬直
+
+(4) Boss
+建议三阶段：
+- 第一阶段：普通追击 + 扇形攻击
+- 第二阶段：召唤弹幕 / 范围圈
+- 第三阶段：高频冲锋 + 范围爆发
+
+4. 奖励系统
+每次奖励三选一，必须随机出现，且尽量不重复。
+建议效果：
+- 攻速提升 10%~20%
+- 生命上限 +20
+- 暴击率 +5%
+- 冲刺 CD -15%
+- 击杀回复 3 HP
+- 移速 +10%
+- 冲刺附带伤害
+- 普通攻击附加一次额外飞弹
+
+5. 房间类型
+至少实现：
+- Start Room
+- Normal Battle Room
+- Reward Room
+- Boss Room
+
+进阶可加：
+- Puzzle Room
+- Heal Room
+- Elite Room
+
+八、Codex 编码时的具体工程要求
+-----------------------------
+1. 代码风格要求
+- 保持模块清晰；
+- 每个文件只负责一个相对明确的功能；
+- 避免超长单文件；
+- 避免“魔法数字”，尽量提取常量；
+- 关键结构体和函数要有注释；
+- 尽量保证命名清晰；
+- 公共逻辑提取到 utils 或 core；
+- 能配置化的尽量配置化。
+
+2. 架构要求
+- 使用 plugin/module 组织功能；
+- 每个系统可单独注册；
+- 系统执行顺序要清楚；
+- 状态切换时要有 setup/cleanup；
+- UI 和 gameplay 分离；
+- 数据定义与运行逻辑分离。
+
+3. 可运行要求
+- 生成的代码应能够通过 cargo run 启动；
+- 若初期素材不足，可使用占位色块/简单 sprite；
+- 先保证玩法完整，再逐步替换美术资源；
+- 必须优先保证编译通过与流程可玩。
+
+4. 开发优先级要求
+第一优先级：
+- 项目骨架
+- 状态系统
+- 玩家移动
+- 简单房间
+- 敌人
+- 攻击与伤害
+- UI 基础
+
+第二优先级：
+- Boss
+- 奖励系统
+- 房间切换
+- 特效
+- 音频
+
+第三优先级：
+- 更复杂地图
+- 轻解谜
+- 配置驱动优化
+- 存档
+- 更多动画和内容
+
+九、建议的开发阶段拆分
+----------------------
+Phase 1：项目初始化
+目标：
+- 创建 Cargo 工程
+- 引入依赖
+- 建立目录结构
+- 实现 AppState
+- 实现主菜单和 InGame 状态切换
+输出：
+- 能进入主菜单
+- 点击开始进入空场景
+
+Phase 2：玩家基础控制
+目标：
+- 玩家生成
+- 移动
+- 朝向
+- 相机跟随
+- 基础攻击
+- 冲刺
+输出：
+- 玩家可操作
+- 有简单攻击反馈
+
+Phase 3：敌人与战斗
+目标：
+- 敌人组件与 AI
+- 伤害系统
+- 子弹或近战碰撞
+- 敌人死亡
+输出：
+- 可进行基础战斗
+
+Phase 4：房间与推进
+目标：
+- 房间结构
+- 门
+- 清怪开门
+- 房间切换
+输出：
+- 有基本探索流程
+
+Phase 5：Boss 与奖励
+目标：
+- Boss 行为
+- Boss 血条
+- 奖励三选一
+- 属性成长
+输出：
+- 一轮核心玩法完整
+
+Phase 6：打磨
+目标：
+- 粒子
+- 屏幕震动
+- 受击闪烁
+- 音效
+- UI 美化
+- Game Over/Victory
+输出：
+- 可演示版本
+
+十、最重要的技术实现点
+--------------------
+Codex 在实现时必须特别注意以下几点：
+
+1. 不要把所有逻辑写在同一个系统里；
+2. 玩家、敌人、Boss、门、奖励、房间必须模块化；
+3. 攻击命中与伤害处理应尽量分离；
+4. 房间状态和游戏状态必须明确；
+5. 所有 UI 创建后要有 cleanup；
+6. RoomCleared、Damage、Death 等应尽量事件化；
+7. 代码必须先追求稳定可运行，再追求复杂特效；
+8. 素材不足时，可以用彩色方块占位，但架构必须合理；
+9. Boss 逻辑不能只是“血量更高的小怪”，必须有阶段变化；
+10. 奖励系统必须真的改变玩家战斗表现，而不是只改文本。
+
+十一、建议加入的 README 内容
+---------------------------
+README 至少应包含：
+1. 项目简介；
+2. 技术栈；
+3. 运行方式；
+4. 目录结构说明；
+5. 核心玩法介绍；
+6. 当前已实现功能；
+7. 后续可扩展方向。
+
+十二、额外加分项（有余力再做）
+----------------------------
+1. 小地图；
+2. 存档与读档；
+3. 伤害数字飘字；
+4. 精英怪；
+5. 商店房；
+6. 音量设置；
+7. 手柄支持；
+8. 更复杂的动画树；
+9. Shader 或光效；
+10. 成就系统；
+11. 连击系统；
+12. 伪随机掉落与稀有奖励；
+13. 可破坏场景物体；
+14. 交互式教学关。
+
+十三、最终交付标准
+-----------------
+最终项目至少应达到以下标准：
+1. cargo run 能启动；
+2. 至少有完整的一局游戏流程；
+3. 有菜单、战斗、Boss、奖励、失败/胜利；
+4. 有基本美术反馈与 UI；
+5. 代码结构清楚，模块划分合理；
+6. 可在答辩时清晰讲述各系统设计；
+7. 项目不是简单模板拼接，而是具备完整玩法闭环。
+
+十四、给 Codex 的直接执行要求（可以原样复制）
+------------------------------------------
+请基于本说明生成一个可运行的 Rust 2D 游戏项目，优先使用 Bevy 生态，采用模块化目录结构实现。请先完成项目骨架与最小可运行版本，再逐步补全玩家、敌人、战斗、房间、Boss、奖励、UI、特效等系统。要求代码可编译、结构清晰、便于后续扩展。若某些美术资源缺失，请先使用占位 sprite 和占位音频接口，保证玩法与架构优先完成。请严格按照本文档给出的目录结构、模块职责、核心功能和函数建议进行实现，避免把大量逻辑堆积在单文件中。
+
+文档结束。

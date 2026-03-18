@@ -2,12 +2,13 @@ use bevy::prelude::*;
 
 use crate::gameplay::enemy::components::{ChargerPhase, ChargerState, EnemyKind, EnemyStats, EnemyType};
 use crate::gameplay::player::components::Player;
+use crate::coop::components::CoopPlayer;
 use crate::utils::math::{clamp_in_room, direction_to};
 use crate::constants::{ROOM_HALF_HEIGHT, ROOM_HALF_WIDTH};
 
 pub fn update_enemy_ai(
     time: Res<Time>,
-    player_q: Query<&GlobalTransform, With<Player>>,
+    player_q: Query<&GlobalTransform, Or<(With<Player>, With<CoopPlayer>)>>,
     mut enemies: Query<(
         &EnemyKind,
         &EnemyStats,
@@ -16,12 +17,21 @@ pub fn update_enemy_ai(
         Option<&mut ChargerState>,
     )>,
 ) {
-    let Ok(player_tf) = player_q.get_single() else { return };
-    let player_pos = player_tf.translation().truncate();
+    let player_positions: Vec<Vec2> = player_q
+        .iter()
+        .map(|tf| tf.translation().truncate())
+        .collect();
+    if player_positions.is_empty() {
+        return;
+    }
 
     for (kind, stats, mut tf, mut vel, charger_state) in &mut enemies {
         let pos = tf.translation.truncate();
-        let dist = pos.distance(player_pos);
+        let (player_pos, dist) = player_positions
+            .iter()
+            .map(|p| (*p, pos.distance(*p)))
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+            .unwrap();
         let dir = direction_to(pos, player_pos);
 
         match kind.0 {

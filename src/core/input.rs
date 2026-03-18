@@ -7,9 +7,13 @@ pub struct PlayerInputState {
     pub move_axis: Vec2,
     pub attack_pressed: bool,
     pub ranged_pressed: bool,
+    pub ranged_held: bool,
     pub dash_pressed: bool,
     pub interact_pressed: bool,
     pub pause_pressed: bool,
+    pub skill1_pressed: bool,
+    pub heal_held: bool,
+    pub shop_pressed: bool,
     pub aim_world: Option<Vec2>,
 }
 
@@ -19,7 +23,16 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<PlayerInputState>().add_systems(
             Update,
-            collect_player_input.run_if(in_state(AppState::InGame)),
+            collect_player_input.run_if(
+                in_state(AppState::InGame)
+                    .or_else(in_state(AppState::PvpMenu))
+                    .or_else(in_state(AppState::PvpLobby))
+                    .or_else(in_state(AppState::PvpGame))
+                    .or_else(in_state(AppState::PvpResult))
+                    .or_else(in_state(AppState::MultiplayerMenu))
+                    .or_else(in_state(AppState::CoopMenu))
+                    .or_else(in_state(AppState::CoopGame)),
+            ),
         );
     }
 }
@@ -36,9 +49,13 @@ pub fn collect_player_input(
 
     input.attack_pressed = mouse.just_pressed(MouseButton::Left) || keyboard.just_pressed(KeyCode::KeyJ);
     input.ranged_pressed = mouse.just_pressed(MouseButton::Right);
+    input.ranged_held = mouse.pressed(MouseButton::Right);
     input.dash_pressed = keyboard.just_pressed(KeyCode::Space);
     input.interact_pressed = keyboard.just_pressed(KeyCode::KeyE);
     input.pause_pressed = keyboard.just_pressed(KeyCode::Escape);
+    input.skill1_pressed = keyboard.just_pressed(KeyCode::KeyQ);
+    input.heal_held = keyboard.pressed(KeyCode::KeyF);
+    input.shop_pressed = keyboard.just_pressed(KeyCode::KeyB);
 
     input.aim_world = map_mouse_to_aim_world(windows, camera_q);
 }

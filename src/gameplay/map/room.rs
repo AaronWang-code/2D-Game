@@ -8,6 +8,7 @@ pub struct RoomId(pub u32);
 pub enum RoomType {
     Start,
     Normal,
+    Shop,
     Reward,
     Puzzle,
     Boss,
@@ -64,4 +65,3 @@ impl FloorLayout {
 
 #[derive(Resource, Debug, Clone, Copy)]
 pub struct CurrentRoom(pub RoomId);
-

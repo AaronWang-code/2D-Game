@@ -8,9 +8,9 @@
     ),
     (
       reward: IncreaseMaxHealth,
-      title: "Max HP +20",
-      description: "Increase max HP and heal the same amount.",
-      value: 20.0,
+      title: "Max HP +20%",
+      description: "Increase max HP by 20% and heal the same amount.",
+      value: 0.20,
     ),
     (
       reward: ReduceDashCooldown,
@@ -50,4 +50,3 @@
     ),
   ],
 )
-

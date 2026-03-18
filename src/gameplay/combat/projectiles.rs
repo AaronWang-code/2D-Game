@@ -22,6 +22,8 @@ pub fn spawn_projectile(
                     color: match team {
                         Team::Player => Color::srgb(0.2, 0.85, 1.0),
                         Team::Enemy => Color::srgb(1.0, 0.35, 0.25),
+                        Team::Pvp1 => Color::srgb(0.2, 0.85, 1.0),
+                        Team::Pvp2 => Color::srgb(1.0, 0.35, 0.25),
                     },
                     custom_size: Some(Vec2::splat(12.0)),
                     ..default()

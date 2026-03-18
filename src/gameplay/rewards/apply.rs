@@ -13,9 +13,10 @@ pub fn apply_reward_to_player_components(
     match reward {
         RewardType::IncreaseAttackSpeed => mods.attack_speed_mult += 0.15,
         RewardType::IncreaseMaxHealth => {
-            mods.max_hp_add += 20.0;
-            health.max += 20.0;
-            health.current += 20.0;
+            let delta = health.max * 0.20;
+            mods.max_hp_add += delta;
+            health.max += delta;
+            health.current = (health.current + delta).min(health.max);
         }
         RewardType::ReduceDashCooldown => mods.dash_cooldown_mult += 0.15,
         RewardType::LifeStealOnKill => mods.lifesteal_on_kill += 3.0,

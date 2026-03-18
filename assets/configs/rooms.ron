@@ -1,4 +1,3 @@
 (
-  room_sequence: [Start, Normal, Reward, Boss],
+  room_sequence: [Start, Normal, Normal, Reward, Normal, Boss],
 )
-

@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use crate::core::assets::GameAssets;
 use crate::core::input::PlayerInputState;
+use crate::data::registry::GameDataRegistry;
 use crate::gameplay::effects::{afterimage, particles};
 
 use super::components::*;
@@ -11,13 +12,33 @@ pub fn player_dash_input_system(
     input: Res<PlayerInputState>,
     time: Res<Time>,
     assets: Res<GameAssets>,
-    mut q: Query<(&GlobalTransform, &mut DashCooldown, &mut DashState, &FacingDirection, &mut InvincibilityTimer, &Sprite), With<Player>>,
+    data: Option<Res<GameDataRegistry>>,
+    mut q: Query<(
+        &GlobalTransform,
+        &mut DashCooldown,
+        &mut DashState,
+        &FacingDirection,
+        &mut InvincibilityTimer,
+        &mut Energy,
+        &Sprite,
+    ), With<Player>>,
 ) {
-    let Ok((tf, mut cd, mut dash, facing, mut inv, sprite)) = q.get_single_mut() else { return };
+    let Ok((tf, mut cd, mut dash, facing, mut inv, mut energy, sprite)) = q.get_single_mut() else {
+        return;
+    };
     cd.timer.tick(time.delta());
     if dash.active || !input.dash_pressed || !cd.timer.finished() {
         return;
     }
+
+    let cost = data
+        .as_deref()
+        .map(|d| d.player.dash_energy_cost)
+        .unwrap_or(25.0);
+    if energy.current < cost {
+        return;
+    }
+    energy.current = (energy.current - cost).max(0.0);
 
     cd.timer.reset();
     dash.active = true;

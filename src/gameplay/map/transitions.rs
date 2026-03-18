@@ -5,7 +5,9 @@ use crate::core::assets::GameAssets;
 use crate::core::input::PlayerInputState;
 use crate::gameplay::map::doors::Door;
 use crate::gameplay::map::room::{CurrentRoom, FloorLayout, RoomId};
+use crate::gameplay::map::VisitedRooms;
 use crate::gameplay::player::components::Player;
+use crate::coop::components::CoopPlayer;
 use crate::states::{AppState, RoomState};
 use crate::utils::easing::ease_in_out;
 
@@ -84,13 +86,16 @@ pub fn detect_room_exit(
     }
 
     // Backward compatibility: if doors were spawned without layout, try any Door entity.
-    for (door, tf) in &doors_q {
-        if player_pos.distance(tf.translation().truncate()) < 70.0 {
-            transition.active = true;
-            transition.to = door.to;
-            transition.phase = TransitionPhase::FadeOut;
-            transition.timer.reset();
-            return;
+    // 有 FloorLayout 时不使用 Door.to（Door 是占位/视觉用），避免错误跳转。
+    if layout.room(current_room.0).is_none() {
+        for (door, tf) in &doors_q {
+            if player_pos.distance(tf.translation().truncate()) < 70.0 {
+                transition.active = true;
+                transition.to = door.to;
+                transition.phase = TransitionPhase::FadeOut;
+                transition.timer.reset();
+                return;
+            }
         }
     }
 }
@@ -105,6 +110,8 @@ pub fn fade_transition_system(
     mut overlay_q: Query<(&mut Sprite, Entity), With<TransitionOverlay>>,
     mut room_state: ResMut<RoomState>,
     mut player_q: Query<&mut Transform, With<Player>>,
+    mut coop_player_q: Query<&mut Transform, With<CoopPlayer>>,
+    mut visited: Option<ResMut<VisitedRooms>>,
 ) {
     if !transition.active {
         return;
@@ -142,8 +149,14 @@ pub fn fade_transition_system(
             overlay_sprite.color.set_alpha(eased);
             if transition.timer.finished() {
                 current_room.0 = transition.to;
+                if let Some(mut visited) = visited {
+                    visited.0.insert(transition.to);
+                }
                 if let Ok(mut player_tf) = player_q.get_single_mut() {
                     player_tf.translation = Vec3::new(-ROOM_HALF_WIDTH * 0.6, 0.0, player_tf.translation.z);
+                }
+                for mut tf in &mut coop_player_q {
+                    tf.translation = Vec3::new(-ROOM_HALF_WIDTH * 0.45, -40.0, tf.translation.z);
                 }
                 let room_type = layout.room(current_room.0).map(|r| r.room_type);
                 *room_state = match room_type {
@@ -164,4 +177,3 @@ pub fn fade_transition_system(
         }
     }
 }
-

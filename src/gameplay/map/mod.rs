@@ -8,21 +8,69 @@ use bevy::prelude::*;
 
 use crate::gameplay::map::room::{CurrentRoom, FloorLayout};
 use crate::gameplay::map::transitions::RoomTransition;
+use crate::gameplay::player::components::{Gold, Player};
 use crate::states::AppState;
 use crate::states::RoomState;
+use bevy::utils::HashSet;
+use crate::gameplay::map::room::RoomId;
+use crate::gameplay::map::room::RoomType;
 
 pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((transitions::TransitionsPlugin, doors::DoorsPlugin, tiles::TilesPlugin))
-            .add_systems(OnEnter(AppState::InGame), generator::generate_and_spawn_floor);
+        app.init_resource::<VisitedRooms>()
+            .init_resource::<RewardRoomGoldBonusSeen>()
+            .add_plugins((transitions::TransitionsPlugin, doors::DoorsPlugin, tiles::TilesPlugin))
+            .add_systems(OnEnter(AppState::InGame), generator::generate_and_spawn_floor)
+            .add_systems(
+                Update,
+                (track_visited_rooms, reward_room_gold_bonus_on_enter).run_if(in_state(AppState::InGame)),
+            );
             // 清理逻辑由 GameplayPlugin 统一在真正离开一局时触发（MainMenu/GameOver/Victory）。
     }
 }
 
 #[derive(Component)]
 pub struct InGameEntity;
+
+#[derive(Resource, Debug, Default, Clone)]
+pub struct VisitedRooms(pub HashSet<RoomId>);
+
+#[derive(Resource, Debug, Default, Clone)]
+pub struct RewardRoomGoldBonusSeen(pub HashSet<RoomId>);
+
+pub fn track_visited_rooms(mut visited: ResMut<VisitedRooms>, current: Option<Res<CurrentRoom>>) {
+    let Some(current) = current else { return };
+    if current.is_changed() {
+        visited.0.insert(current.0);
+    }
+}
+
+pub fn reward_room_gold_bonus_on_enter(
+    layout: Option<Res<FloorLayout>>,
+    current: Option<Res<CurrentRoom>>,
+    mut seen: ResMut<RewardRoomGoldBonusSeen>,
+    mut gold_q: Query<&mut Gold, With<Player>>,
+) {
+    let (Some(layout), Some(current)) = (layout, current) else { return };
+    if layout.is_changed() {
+        seen.0.clear();
+    }
+    if !current.is_changed() && !layout.is_changed() {
+        return;
+    }
+    let Some(room) = layout.room(current.0) else { return };
+    if room.room_type != RoomType::Reward {
+        return;
+    }
+    if !seen.0.insert(current.0) {
+        return;
+    }
+    if let Ok(mut gold) = gold_q.get_single_mut() {
+        gold.0 = gold.0.saturating_add(100);
+    }
+}
 
 pub fn cleanup_ingame_world(mut commands: Commands, q: Query<Entity, With<InGameEntity>>) {
     for e in &q {

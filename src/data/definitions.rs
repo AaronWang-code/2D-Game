@@ -15,6 +15,17 @@ pub struct PlayerConfig {
     pub dash_duration_s: f32,
     pub invincibility_s: f32,
     pub crit_chance: f32,
+    pub energy_max: f32,
+    pub energy_regen_per_s: f32,
+    pub dash_energy_cost: f32,
+    pub ranged_energy_cost: f32,
+    pub skill1_energy_cost: f32,
+    pub heal_energy_cost_per_s: f32,
+    pub heal_hp_per_s: f32,
+    pub skill1_cooldown_s: f32,
+    pub ranged_base_cooldown_s: f32,
+    pub ranged_min_cooldown_s: f32,
+    pub ranged_ramp_max: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,5 +81,8 @@ pub struct GameBalanceConfig {
     pub boss_room_gives_victory: bool,
     pub floor_rooms: u32,
     pub enemy_types: Vec<EnemyType>,
+    pub elite_chance: f32,
+    pub elite_hp_mult: f32,
+    pub elite_damage_mult: f32,
+    pub elite_gold_bonus: u32,
 }
-

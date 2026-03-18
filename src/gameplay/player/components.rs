@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::gameplay::combat::components::Team;
 
@@ -62,7 +63,36 @@ pub enum AnimationState {
 #[derive(Component, Debug, Clone, Copy)]
 pub struct CritChance(pub f32);
 
-#[derive(Component, Debug, Default, Clone, Copy)]
+#[derive(Component, Debug, Clone, Copy, Default)]
+pub struct Gold(pub u32);
+
+#[derive(Component, Debug, Clone)]
+pub struct Combo {
+    pub count: u32,
+    pub timer: Timer,
+}
+
+impl Combo {
+    pub fn new(window_s: f32) -> Self {
+        Self {
+            count: 0,
+            timer: Timer::from_seconds(window_s, TimerMode::Once),
+        }
+    }
+}
+
+#[derive(Component, Debug, Clone)]
+pub struct Skill1Cooldown {
+    pub timer: Timer,
+}
+
+#[derive(Component, Debug, Clone)]
+pub struct RangedRapidFire {
+    pub ramp: u32,
+    pub decay: Timer,
+}
+
+#[derive(Component, Debug, Default, Clone, Copy, Serialize, Deserialize)]
 pub struct RewardModifiers {
     pub attack_speed_mult: f32,
     pub max_hp_add: f32,

@@ -5,5 +5,8 @@
   boss_room_gives_victory: true,
   floor_rooms: 4,
   enemy_types: [MeleeChaser, RangedShooter, Charger],
+  elite_chance: 0.25,
+  elite_hp_mult: 1.8,
+  elite_damage_mult: 1.4,
+  elite_gold_bonus: 10,
 )
-

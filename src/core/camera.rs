@@ -2,6 +2,8 @@ use bevy::prelude::*;
 
 use crate::gameplay::effects::screen_shake::{ScreenShake, ScreenShakeRequest};
 use crate::gameplay::player::components::Player;
+use crate::coop::components::CoopClientLocalPlayer;
+use crate::pvp::components::PvpLocalPlayer;
 use crate::states::AppState;
 
 #[derive(Component)]
@@ -17,6 +19,14 @@ impl Plugin for CameraPlugin {
                 Update,
                 (camera_follow_player, apply_screen_shake)
                     .run_if(in_state(AppState::InGame)),
+            )
+            .add_systems(
+                Update,
+                (camera_follow_pvp_local, apply_screen_shake).run_if(in_state(AppState::PvpGame)),
+            )
+            .add_systems(
+                Update,
+                (camera_follow_coop_local, apply_screen_shake).run_if(in_state(AppState::CoopGame)),
             );
     }
 }
@@ -28,6 +38,38 @@ pub fn setup_camera(mut commands: Commands) {
 pub fn camera_follow_player(
     player_q: Query<&GlobalTransform, With<Player>>,
     mut camera_q: Query<&mut Transform, (With<MainCamera>, Without<Player>)>,
+    time: Res<Time>,
+) {
+    let Ok(player_tf) = player_q.get_single() else { return };
+    let Ok(mut camera_tf) = camera_q.get_single_mut() else { return };
+
+    let target = player_tf.translation().truncate();
+    let current = camera_tf.translation.truncate();
+    let lerp = 1.0 - (-10.0 * time.delta_seconds()).exp();
+    let next = current.lerp(target, lerp);
+    camera_tf.translation.x = next.x;
+    camera_tf.translation.y = next.y;
+}
+
+pub fn camera_follow_pvp_local(
+    player_q: Query<&GlobalTransform, With<PvpLocalPlayer>>,
+    mut camera_q: Query<&mut Transform, With<MainCamera>>,
+    time: Res<Time>,
+) {
+    let Ok(player_tf) = player_q.get_single() else { return };
+    let Ok(mut camera_tf) = camera_q.get_single_mut() else { return };
+
+    let target = player_tf.translation().truncate();
+    let current = camera_tf.translation.truncate();
+    let lerp = 1.0 - (-10.0 * time.delta_seconds()).exp();
+    let next = current.lerp(target, lerp);
+    camera_tf.translation.x = next.x;
+    camera_tf.translation.y = next.y;
+}
+
+pub fn camera_follow_coop_local(
+    player_q: Query<&GlobalTransform, With<CoopClientLocalPlayer>>,
+    mut camera_q: Query<&mut Transform, With<MainCamera>>,
     time: Res<Time>,
 ) {
     let Ok(player_tf) = player_q.get_single() else { return };

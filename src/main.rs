@@ -3,6 +3,8 @@ mod constants;
 mod core;
 mod data;
 mod gameplay;
+mod coop;
+mod pvp;
 mod prelude;
 mod states;
 mod ui;
