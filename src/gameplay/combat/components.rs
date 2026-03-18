@@ -20,6 +20,8 @@ pub struct Hitbox {
     pub damage: f32,
     pub knockback: f32,
     pub can_crit: bool,
+    pub crit_chance: f32,
+    pub crit_multiplier: f32,
 }
 
 #[derive(Component, Debug, Clone, Copy)]
@@ -33,4 +35,3 @@ pub struct Lifetime(pub Timer);
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Knockback(pub Vec2);
-

@@ -28,20 +28,23 @@ pub fn setup_pause_menu(mut commands: Commands, assets: Res<GameAssets>) {
         .with_children(|root| {
             root.spawn(widgets::panel_node(Color::srgba(0.0, 0.0, 0.0, 0.75)))
                 .with_children(|panel| {
-                    panel.spawn(widgets::title_text(&assets, "已暂停", 48.0));
+                    panel.spawn(widgets::title_text(&assets, "游戏已暂停", 48.0));
                     panel.spawn(widgets::title_text(&assets, "按 ESC 继续游戏", 18.0));
                 });
         });
 }
 
-pub fn pause_menu_keyboard_system(keyboard: Res<ButtonInput<KeyCode>>, mut next: ResMut<NextState<AppState>>) {
+pub fn pause_menu_keyboard_system(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut next: ResMut<NextState<AppState>>,
+) {
     if keyboard.just_pressed(KeyCode::Escape) {
         next.set(AppState::InGame);
     }
 }
 
 pub fn cleanup_pause_menu(mut commands: Commands, q: Query<Entity, With<PauseUi>>) {
-    for e in &q {
-        commands.entity(e).despawn_recursive();
+    for entity in &q {
+        commands.entity(entity).despawn_recursive();
     }
 }

@@ -29,16 +29,19 @@ pub struct AttackPower(pub f32);
 #[derive(Component, Debug, Clone)]
 pub struct AttackCooldown {
     pub timer: Timer,
+    pub base_duration_s: f32,
 }
 
 #[derive(Component, Debug, Clone)]
 pub struct DashCooldown {
     pub timer: Timer,
+    pub base_duration_s: f32,
 }
 
 #[derive(Component, Debug, Clone)]
 pub struct RangedCooldown {
     pub timer: Timer,
+    pub base_duration_s: f32,
 }
 
 #[derive(Component, Debug, Clone)]
@@ -79,6 +82,7 @@ pub struct DashState {
     pub active: bool,
     pub dir: Vec2,
     pub timer: Timer,
+    pub trail_timer: Timer,
     pub speed: f32,
 }
 
@@ -88,8 +92,54 @@ impl DashState {
             active: false,
             dir: Vec2::X,
             timer: Timer::from_seconds(duration_s, TimerMode::Once),
+            trail_timer: Timer::from_seconds(0.05, TimerMode::Repeating),
             speed,
         }
+    }
+}
+
+impl AttackCooldown {
+    pub fn new(duration_s: f32) -> Self {
+        Self {
+            timer: Timer::from_seconds(duration_s, TimerMode::Once),
+            base_duration_s: duration_s,
+        }
+    }
+
+    pub fn apply_speed_bonus(&mut self, speed_bonus: f32) {
+        let duration_s = (self.base_duration_s * (1.0 - speed_bonus.clamp(0.0, 0.8))).max(0.08);
+        self.timer
+            .set_duration(std::time::Duration::from_secs_f32(duration_s));
+    }
+}
+
+impl DashCooldown {
+    pub fn new(duration_s: f32) -> Self {
+        Self {
+            timer: Timer::from_seconds(duration_s, TimerMode::Once),
+            base_duration_s: duration_s,
+        }
+    }
+
+    pub fn apply_reduction(&mut self, reduction: f32) {
+        let duration_s = (self.base_duration_s * (1.0 - reduction.clamp(0.0, 0.8))).max(0.25);
+        self.timer
+            .set_duration(std::time::Duration::from_secs_f32(duration_s));
+    }
+}
+
+impl RangedCooldown {
+    pub fn new(duration_s: f32) -> Self {
+        Self {
+            timer: Timer::from_seconds(duration_s, TimerMode::Once),
+            base_duration_s: duration_s,
+        }
+    }
+
+    pub fn apply_speed_bonus(&mut self, speed_bonus: f32) {
+        let duration_s = (self.base_duration_s * (1.0 - speed_bonus.clamp(0.0, 0.8))).max(0.12);
+        self.timer
+            .set_duration(std::time::Duration::from_secs_f32(duration_s));
     }
 }
 

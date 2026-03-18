@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::constants::{ROOM_HALF_HEIGHT, ROOM_HALF_WIDTH};
+use crate::constants::ROOM_HALF_WIDTH;
 use crate::core::assets::GameAssets;
 use crate::gameplay::map::InGameEntity;
 use crate::gameplay::map::room::{Direction, RoomId};
@@ -38,10 +38,15 @@ pub fn spawn_room_doors_if_missing(
 pub fn spawn_room_doors(commands: &mut Commands, assets: &GameAssets) {
     let door_size = Vec2::new(46.0, 96.0);
     for (dir, pos) in [
-        (Direction::Right, Vec3::new(ROOM_HALF_WIDTH - 10.0, 0.0, 10.0)),
-        (Direction::Left, Vec3::new(-(ROOM_HALF_WIDTH - 10.0), 0.0, 10.0)),
+        (
+            Direction::Right,
+            Vec3::new(ROOM_HALF_WIDTH - 10.0, 0.0, 10.0),
+        ),
+        (
+            Direction::Left,
+            Vec3::new(-(ROOM_HALF_WIDTH - 10.0), 0.0, 10.0),
+        ),
     ] {
-        // Targets are resolved by transitions system; put placeholder RoomId.
         commands.spawn((
             SpriteBundle {
                 texture: assets.textures.white.clone(),
@@ -62,7 +67,7 @@ pub fn spawn_room_doors(commands: &mut Commands, assets: &GameAssets) {
         commands.spawn((
             Text2dBundle {
                 text: Text::from_section(
-                    "门 (E)",
+                    "交互(E)",
                     TextStyle {
                         font: assets.font.clone(),
                         font_size: 22.0,
@@ -86,7 +91,10 @@ pub fn unlock_room_doors(mut room_state: ResMut<RoomState>) {
     *room_state = RoomState::Cleared;
 }
 
-pub fn update_door_visuals(room_state: Option<Res<RoomState>>, mut q: Query<&mut Sprite, With<DoorVisual>>) {
+pub fn update_door_visuals(
+    room_state: Option<Res<RoomState>>,
+    mut q: Query<&mut Sprite, With<DoorVisual>>,
+) {
     let Some(room_state) = room_state else { return };
     for mut sprite in &mut q {
         sprite.color = match *room_state {

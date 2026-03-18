@@ -25,26 +25,34 @@ pub fn setup_main_menu(mut commands: Commands, assets: Res<GameAssets>) {
                     panel.spawn(widgets::title_text(&assets, "迷雾回响", 52.0));
                     panel.spawn(widgets::title_text(
                         &assets,
-                        "鼠标左键：近战   鼠标右键：远程   Space：冲刺   E：开门   ESC：暂停",
+                        "左键近战  右键远程  Space 冲刺  E 交互  ESC 暂停",
                         18.0,
+                    ));
+                    panel.spawn(widgets::title_text(
+                        &assets,
+                        "现在为 4 层随机流程，每层难度都会继续上升。",
+                        16.0,
                     ));
 
                     panel
                         .spawn((widgets::button_bundle(), MenuButton::Start))
-                        .with_children(|b| {
-                            b.spawn(widgets::title_text(&assets, "开始游戏", 22.0));
+                        .with_children(|button| {
+                            button.spawn(widgets::title_text(&assets, "开始游戏", 22.0));
                         });
                     panel
                         .spawn((widgets::button_bundle(), MenuButton::Quit))
-                        .with_children(|b| {
-                            b.spawn(widgets::title_text(&assets, "退出", 22.0));
+                        .with_children(|button| {
+                            button.spawn(widgets::title_text(&assets, "退出游戏", 22.0));
                         });
                 });
         });
 }
 
 pub fn menu_button_system(
-    mut interaction_q: Query<(&Interaction, &MenuButton, &mut BackgroundColor), (Changed<Interaction>, With<Button>)>,
+    mut interaction_q: Query<
+        (&Interaction, &MenuButton, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
+    >,
     mut next_state: ResMut<NextState<AppState>>,
     mut exit: EventWriter<AppExit>,
     mut commands: Commands,
@@ -68,7 +76,7 @@ pub fn menu_button_system(
 }
 
 pub fn cleanup_main_menu(mut commands: Commands, q: Query<Entity, With<MainMenuUi>>) {
-    for e in &q {
-        commands.entity(e).despawn_recursive();
+    for entity in &q {
+        commands.entity(entity).despawn_recursive();
     }
 }

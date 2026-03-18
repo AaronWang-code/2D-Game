@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 
+use crate::constants::{ROOM_HALF_HEIGHT, ROOM_HALF_WIDTH};
+use crate::core::assets::GameAssets;
 use crate::core::events::DeathEvent;
 use crate::core::input::PlayerInputState;
-use crate::core::assets::GameAssets;
 use crate::data::registry::GameDataRegistry;
 use crate::gameplay::combat::components::{Hurtbox, Knockback, Team};
 use crate::gameplay::effects::flash::Flash;
 use crate::gameplay::map::InGameEntity;
-use crate::constants::{ROOM_HALF_HEIGHT, ROOM_HALF_WIDTH};
 use crate::states::{AppState, RoomState};
 use crate::utils::math::{clamp_in_room, clamp_length};
 
@@ -29,28 +29,31 @@ pub fn spawn_player(
     let max_hp = cfg.map(|c| c.max_hp).unwrap_or(100.0);
     let move_speed = cfg.map(|c| c.move_speed).unwrap_or(260.0);
     let attack_power = cfg.map(|c| c.attack_power).unwrap_or(18.0);
-    let attack_cd = cfg.map(|c| c.attack_cooldown_s).unwrap_or(0.35);
+    let attack_cd = cfg.map(|c| c.attack_cooldown_s).unwrap_or(0.50);
+    let ranged_cd = cfg.map(|c| c.ranged_cooldown_s).unwrap_or(0.70);
     let dash_cd = cfg.map(|c| c.dash_cooldown_s).unwrap_or(1.2);
     let dash_speed = cfg.map(|c| c.dash_speed).unwrap_or(680.0);
     let dash_duration = cfg.map(|c| c.dash_duration_s).unwrap_or(0.12);
     let inv_s = cfg.map(|c| c.invincibility_s).unwrap_or(0.35);
     let crit = cfg.map(|c| c.crit_chance).unwrap_or(0.05);
-    let ranged_cd = 0.45;
 
-    let mut entity = commands.spawn((
-        SpriteBundle {
-            texture: assets.textures.white.clone(),
-            transform: Transform::from_translation(Vec3::new(-220.0, 0.0, 50.0)),
-            sprite: Sprite {
-                color: Color::srgb(0.35, 0.9, 0.45),
-                custom_size: Some(Vec2::splat(32.0)),
-                ..default()
-            },
+    let mut entity = commands.spawn((SpriteBundle {
+        texture: assets.textures.white.clone(),
+        transform: Transform::from_translation(Vec3::new(-220.0, 0.0, 50.0)),
+        sprite: Sprite {
+            color: Color::srgb(0.35, 0.9, 0.45),
+            custom_size: Some(Vec2::splat(32.0)),
             ..default()
         },
-    ));
+        ..default()
+    },));
 
-    entity.insert((Player, TeamMarker(Team::Player), InGameEntity, Name::new("Player")));
+    entity.insert((
+        Player,
+        TeamMarker(Team::Player),
+        InGameEntity,
+        Name::new("Player"),
+    ));
     entity.insert((
         Health {
             current: max_hp,
@@ -68,15 +71,9 @@ pub fn spawn_player(
         RewardModifiers::default(),
     ));
     entity.insert((
-        AttackCooldown {
-            timer: Timer::from_seconds(attack_cd, TimerMode::Once),
-        },
-        RangedCooldown {
-            timer: Timer::from_seconds(ranged_cd, TimerMode::Once),
-        },
-        DashCooldown {
-            timer: Timer::from_seconds(dash_cd, TimerMode::Once),
-        },
+        AttackCooldown::new(attack_cd),
+        RangedCooldown::new(ranged_cd),
+        DashCooldown::new(dash_cd),
         InvincibilityTimer {
             timer: Timer::from_seconds(inv_s, TimerMode::Once),
         },
@@ -99,7 +96,9 @@ pub fn player_move_system(
     if matches!(*room_state, RoomState::BossFight) {
         // still movable
     }
-    let Ok((dash, move_speed, mut vel, mut tf)) = q.get_single_mut() else { return };
+    let Ok((dash, move_speed, mut vel, mut tf)) = q.get_single_mut() else {
+        return;
+    };
     if dash.active {
         vel.0 = dash.dir * dash.speed;
     } else {
@@ -121,7 +120,9 @@ pub fn player_facing_system(
     input: Res<PlayerInputState>,
     mut q: Query<(&GlobalTransform, &mut FacingDirection, &Velocity), With<Player>>,
 ) {
-    let Ok((tf, mut facing, vel)) = q.get_single_mut() else { return };
+    let Ok((tf, mut facing, vel)) = q.get_single_mut() else {
+        return;
+    };
     if let Some(world) = input.aim_world {
         let dir = (world - tf.translation().truncate()).try_normalize();
         if let Some(dir) = dir {
@@ -136,8 +137,13 @@ pub fn player_facing_system(
     }
 }
 
-pub fn player_invincibility_system(time: Res<Time>, mut q: Query<&mut InvincibilityTimer, With<Player>>) {
-    let Ok(mut inv) = q.get_single_mut() else { return };
+pub fn player_invincibility_system(
+    time: Res<Time>,
+    mut q: Query<&mut InvincibilityTimer, With<Player>>,
+) {
+    let Ok(mut inv) = q.get_single_mut() else {
+        return;
+    };
     inv.timer.tick(time.delta());
 }
 
@@ -146,7 +152,9 @@ pub fn player_death_system(
     player_q: Query<Entity, With<Player>>,
     mut next_state: ResMut<NextState<AppState>>,
 ) {
-    let Ok(player_e) = player_q.get_single() else { return };
+    let Ok(player_e) = player_q.get_single() else {
+        return;
+    };
     for ev in death_events.read() {
         if ev.entity == player_e {
             next_state.set(AppState::GameOver);

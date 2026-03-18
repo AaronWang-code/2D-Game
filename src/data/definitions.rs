@@ -10,6 +10,7 @@ pub struct PlayerConfig {
     pub move_speed: f32,
     pub attack_power: f32,
     pub attack_cooldown_s: f32,
+    pub ranged_cooldown_s: f32,
     pub dash_cooldown_s: f32,
     pub dash_speed: f32,
     pub dash_duration_s: f32,
@@ -68,7 +69,7 @@ pub struct GameBalanceConfig {
     pub enemy_count_normal_room: u32,
     pub reward_rooms_give_choice: bool,
     pub boss_room_gives_victory: bool,
+    pub total_floors: u32,
     pub floor_rooms: u32,
     pub enemy_types: Vec<EnemyType>,
 }
-
