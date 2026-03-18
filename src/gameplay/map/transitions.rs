@@ -109,8 +109,8 @@ pub fn fade_transition_system(
     layout: Res<FloorLayout>,
     mut overlay_q: Query<(&mut Sprite, Entity), With<TransitionOverlay>>,
     mut room_state: ResMut<RoomState>,
-    mut player_q: Query<&mut Transform, With<Player>>,
-    mut coop_player_q: Query<&mut Transform, With<CoopPlayer>>,
+    mut player_q: Query<&mut Transform, (With<Player>, Without<CoopPlayer>)>,
+    mut coop_player_q: Query<&mut Transform, (With<CoopPlayer>, Without<Player>)>,
     mut visited: Option<ResMut<VisitedRooms>>,
 ) {
     if !transition.active {
