@@ -2,11 +2,16 @@ use bevy::prelude::*;
 
 use crate::core::assets::GameAssets;
 use crate::core::events::DamageEvent;
-use crate::gameplay::combat::components::{ArcHitbox, Hitbox, Hurtbox, Projectile, Team};
+use crate::gameplay::combat::components::{
+    ArcHitbox, Hitbox, Hurtbox, Projectile, RuptureDot, Team,
+};
 use crate::gameplay::effects::particles;
+use crate::gameplay::enemy::components::BossArchetype;
 use crate::gameplay::player::components::RewardModifiers;
+use crate::gameplay::player::components::{Health, Player};
 use crate::utils::collision::Aabb2;
 use crate::utils::collision::aabb_from_transform_size;
+use crate::utils::entity::safe_despawn_recursive;
 use crate::utils::rng::GameRng;
 
 #[derive(Clone, Copy)]
@@ -122,8 +127,13 @@ pub fn reflect_enemy_projectiles_on_melee(
 
 pub fn detect_hitbox_hurtbox_overlap(
     mut commands: Commands,
+    assets: Res<GameAssets>,
     mut damage_ev: EventWriter<DamageEvent>,
     mut rng: ResMut<GameRng>,
+    owner_mods: Query<&RewardModifiers>,
+    mut owner_health_q: Query<&mut Health, With<Player>>,
+    boss_q: Query<(), With<BossArchetype>>,
+    existing_ruptures: Query<&RuptureDot>,
     hitboxes: Query<(Entity, &Hitbox, &GlobalTransform, Option<&ArcHitbox>)>,
     hurtboxes: Query<(Entity, &Hurtbox, &GlobalTransform)>,
 ) {
@@ -148,6 +158,8 @@ pub fn detect_hitbox_hurtbox_overlap(
             } else {
                 hb.damage
             };
+            let is_melee_arc = arc.is_some() && hb.team == Team::Player;
+            let target_is_boss = boss_q.get(target).is_ok();
 
             damage_ev.send(DamageEvent {
                 target,
@@ -158,8 +170,56 @@ pub fn detect_hitbox_hurtbox_overlap(
                 is_crit,
             });
 
+            if is_melee_arc {
+                if let Some(owner) = hb.owner {
+                    if let Ok(mods) = owner_mods.get(owner) {
+                        let heal_fraction = mods.melee_on_hit_heal_fraction(target_is_boss);
+                        if heal_fraction > 0.0 {
+                            if let Ok(mut owner_health) = owner_health_q.get_mut(owner) {
+                                let before = owner_health.current;
+                                owner_health.current = (owner_health.current
+                                    + (amount * heal_fraction).min(2.0))
+                                .min(owner_health.max);
+                                if owner_health.current > before + f32::EPSILON {
+                                    particles::spawn_hit_particles(
+                                        &mut commands,
+                                        &assets,
+                                        target_tf.translation().truncate(),
+                                        Color::srgba(0.52, 1.0, 0.60, 0.76),
+                                    );
+                                }
+                            }
+                        }
+
+                        let rupture_fraction = mods.melee_rupture_total_fraction();
+                        if rupture_fraction > 0.0 {
+                            let per_tick = (amount * rupture_fraction / 3.0).max(0.1);
+                            let should_refresh = existing_ruptures
+                                .get(target)
+                                .map(|current| per_tick > current.damage_per_tick)
+                                .unwrap_or(true);
+                            if should_refresh {
+                                let rupture = RuptureDot {
+                                    source: Some(owner),
+                                    damage_per_tick: per_tick,
+                                    ticks_remaining: 3,
+                                    timer: Timer::from_seconds(0.5, TimerMode::Repeating),
+                                };
+                                commands.entity(target).insert(rupture);
+                                particles::spawn_hit_particles(
+                                    &mut commands,
+                                    &assets,
+                                    target_tf.translation().truncate(),
+                                    Color::srgba(1.0, 0.42, 0.46, 0.80),
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+
             // Single-hit hitboxes for MVP.
-            commands.entity(hb_entity).despawn_recursive();
+            safe_despawn_recursive(&mut commands, hb_entity);
             break;
         }
     }
@@ -216,7 +276,33 @@ pub fn despawn_expired_hitboxes(
     for (e, mut lifetime) in &mut q {
         lifetime.0.tick(time.delta());
         if lifetime.0.finished() {
-            commands.entity(e).despawn_recursive();
+            safe_despawn_recursive(&mut commands, e);
+        }
+    }
+}
+
+pub fn tick_rupture_dots(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut damage_ev: EventWriter<DamageEvent>,
+    mut q: Query<(Entity, &mut RuptureDot)>,
+) {
+    for (entity, mut rupture) in &mut q {
+        rupture.timer.tick(time.delta());
+        if rupture.timer.just_finished() && rupture.ticks_remaining > 0 {
+            rupture.ticks_remaining -= 1;
+            damage_ev.send(DamageEvent {
+                target: entity,
+                source: rupture.source,
+                amount: rupture.damage_per_tick,
+                knockback: Vec2::ZERO,
+                team: Team::Player,
+                is_crit: false,
+            });
+        }
+
+        if rupture.ticks_remaining == 0 {
+            commands.entity(entity).remove::<RuptureDot>();
         }
     }
 }

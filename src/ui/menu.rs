@@ -22,27 +22,21 @@ pub fn setup_main_menu(mut commands: Commands, assets: Res<GameAssets>) {
         .with_children(|root| {
             root.spawn(widgets::panel_node(Color::srgba(0.05, 0.06, 0.10, 0.9)))
                 .with_children(|panel| {
-                    panel.spawn(widgets::title_text(&assets, "迷雾回响", 52.0));
+                    panel.spawn(widgets::title_text(&assets, "Block City Adventure", 52.0));
                     panel.spawn(widgets::title_text(
                         &assets,
-                        "左键近战  右键远程  Space 冲刺  E 交互  ESC 暂停",
+                        "LMB: melee  RMB: ranged  Space: dash  E: interact  Esc: pause",
                         18.0,
                     ));
-                    panel.spawn(widgets::title_text(
-                        &assets,
-                        "现在为 4 层随机流程，每层难度都会继续上升。",
-                        16.0,
-                    ));
-
                     panel
                         .spawn((widgets::button_bundle(), MenuButton::Start))
                         .with_children(|button| {
-                            button.spawn(widgets::title_text(&assets, "开始游戏", 22.0));
+                            button.spawn(widgets::title_text(&assets, "Start", 22.0));
                         });
                     panel
                         .spawn((widgets::button_bundle(), MenuButton::Quit))
                         .with_children(|button| {
-                            button.spawn(widgets::title_text(&assets, "退出游戏", 22.0));
+                            button.spawn(widgets::title_text(&assets, "Quit", 22.0));
                         });
                 });
         });
@@ -76,7 +70,7 @@ pub fn menu_button_system(
 }
 
 pub fn cleanup_main_menu(mut commands: Commands, q: Query<Entity, With<MainMenuUi>>) {
-    for entity in &q {
-        commands.entity(entity).despawn_recursive();
+    for e in &q {
+        commands.entity(e).despawn_recursive();
     }
 }

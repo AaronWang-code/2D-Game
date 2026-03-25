@@ -4,6 +4,7 @@ use crate::constants::{ROOM_HALF_HEIGHT, ROOM_HALF_WIDTH};
 use crate::core::assets::GameAssets;
 use crate::gameplay::combat::components::{Hitbox, Lifetime, Projectile, Team};
 use crate::gameplay::map::InGameEntity;
+use crate::utils::entity::safe_despawn_recursive;
 
 pub fn spawn_projectile(
     commands: &mut Commands,
@@ -68,6 +69,8 @@ fn spawn_projectile_with_hitbox(
             match team {
                 Team::Player => Color::srgb(0.2, 0.85, 1.0),
                 Team::Enemy => Color::srgb(1.0, 0.35, 0.25),
+                Team::Pvp1 => Color::srgb(0.25, 0.9, 0.35),
+                Team::Pvp2 => Color::srgb(0.95, 0.85, 0.25),
             },
             Vec2::splat(12.0),
             Vec2::splat(14.0),
@@ -125,7 +128,7 @@ pub fn despawn_expired_projectiles(
     for (e, mut lifetime) in &mut q {
         lifetime.0.tick(time.delta());
         if lifetime.0.finished() {
-            commands.entity(e).despawn_recursive();
+            safe_despawn_recursive(&mut commands, e);
         }
     }
 }
@@ -138,7 +141,7 @@ pub fn despawn_out_of_room_projectiles(
     for (e, tf) in &q {
         let p = tf.translation.truncate();
         if p.x.abs() > half.x || p.y.abs() > half.y {
-            commands.entity(e).despawn_recursive();
+            safe_despawn_recursive(&mut commands, e);
         }
     }
 }

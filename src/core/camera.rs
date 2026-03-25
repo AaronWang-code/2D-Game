@@ -15,7 +15,11 @@ impl Plugin for CameraPlugin {
             .add_systems(Startup, setup_camera)
             .add_systems(
                 Update,
-                (camera_follow_player, apply_screen_shake).run_if(in_state(AppState::InGame)),
+                camera_follow_player.run_if(in_state(AppState::InGame)),
+            )
+            .add_systems(
+                Update,
+                apply_screen_shake.run_if(in_state(AppState::InGame)),
             );
     }
 }

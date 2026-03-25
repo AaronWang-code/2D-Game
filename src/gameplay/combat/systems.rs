@@ -13,6 +13,7 @@ impl Plugin for CombatSystemsPlugin {
             (
                 hitbox::reflect_enemy_projectiles_on_melee,
                 hitbox::detect_hitbox_hurtbox_overlap,
+                hitbox::tick_rupture_dots,
                 projectiles::move_projectiles,
                 damage::apply_damage_events,
                 damage::apply_knockback_decay,

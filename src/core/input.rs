@@ -12,6 +12,9 @@ pub struct PlayerInputState {
     pub dash_pressed: bool,
     pub interact_pressed: bool,
     pub pause_pressed: bool,
+    pub skill1_pressed: bool,
+    pub heal_held: bool,
+    pub shop_pressed: bool,
     pub aim_world: Option<Vec2>,
 }
 
@@ -44,6 +47,10 @@ pub fn collect_player_input(
     input.dash_pressed = keyboard.just_pressed(KeyCode::Space);
     input.interact_pressed = keyboard.just_pressed(KeyCode::KeyE);
     input.pause_pressed = keyboard.just_pressed(KeyCode::Escape);
+    // Energy/skill gameplay is currently disabled; keep these inputs inert.
+    input.skill1_pressed = false;
+    input.heal_held = false;
+    input.shop_pressed = keyboard.just_pressed(KeyCode::KeyB);
 
     input.aim_world = map_mouse_to_aim_world(windows, camera_q);
 }

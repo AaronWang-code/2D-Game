@@ -8,6 +8,7 @@ pub enum AppState {
     InGame,
     Paused,
     RewardSelect,
+    Shop,
     GameOver,
     Victory,
 }

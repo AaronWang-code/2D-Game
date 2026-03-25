@@ -6,7 +6,7 @@ use crate::data::definitions::*;
 pub struct GameDataRegistry {
     pub player: PlayerConfig,
     pub enemies: EnemiesConfig,
-    pub boss: BossConfig,
+    pub bosses: BossesConfig,
     pub rewards: RewardsConfig,
     pub rooms: RoomGenConfig,
     pub balance: GameBalanceConfig,

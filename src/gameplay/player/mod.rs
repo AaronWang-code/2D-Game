@@ -1,7 +1,9 @@
 pub mod animation;
 pub mod combat;
+pub mod combo;
 pub mod components;
 pub mod dash;
+pub mod skills;
 pub mod systems;
 
 use bevy::prelude::*;
@@ -22,9 +24,11 @@ impl Plugin for PlayerPlugin {
                     combat::player_attack_input_system,
                     combat::player_ranged_input_system,
                     combat::update_attack_cooldowns,
+                    combat::update_delayed_ranged_shots,
                     combat::update_melee_slash_effects,
                     dash::player_dash_input_system,
                     dash::update_dash_state,
+                    combo::update_combo_state,
                     animation::update_player_animation_state,
                     animation::animate_player_sprite,
                     systems::player_death_system,

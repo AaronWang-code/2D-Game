@@ -1,8 +1,31 @@
 (
-  max_hp: 245.0,
-  move_speed: 115.0,
-  contact_damage: 13.0,
-  phase_thresholds: [0.60, 0.30],
-  projectile_speed: 430.0,
+  floor_1: (
+    max_hp: 245.0,
+    move_speed: 115.0,
+    contact_damage: 13.0,
+    phase_thresholds: [0.60, 0.30],
+    projectile_speed: 430.0,
+  ),
+  floor_2: (
+    max_hp: 305.0,
+    move_speed: 122.0,
+    contact_damage: 15.0,
+    phase_thresholds: [0.68, 0.34],
+    projectile_speed: 470.0,
+  ),
+  floor_3: (
+    max_hp: 372.0,
+    move_speed: 128.0,
+    contact_damage: 17.0,
+    phase_thresholds: [0.70, 0.35],
+    projectile_speed: 505.0,
+  ),
+  floor_4: (
+    max_hp: 680.0,
+    move_speed: 118.0,
+    contact_damage: 19.0,
+    phase_thresholds: [0.72, 0.38],
+    projectile_speed: 540.0,
+  ),
 )
 

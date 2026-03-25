@@ -18,6 +18,7 @@ pub struct TextureHandles {
     pub cursor: Handle<Image>,
     pub crosshair: Handle<Image>,
     pub slash: Handle<Image>,
+    pub slash_layout: Handle<TextureAtlasLayout>,
 }
 
 #[derive(Resource, Clone, Default)]
@@ -44,12 +45,20 @@ pub fn load_game_assets(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
+    mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     let font = asset_server.load("fonts/main_font.ttf");
     let player = asset_server.load("textures/player_hero.png");
+    let slash = asset_server.load("textures/effects/melee_slash_sprites.png");
+    let slash_layout = atlas_layouts.add(TextureAtlasLayout::from_grid(
+        UVec2::new(64, 47),
+        3,
+        3,
+        None,
+        None,
+    ));
     let cursor = images.add(make_cursor_image());
     let crosshair = images.add(make_crosshair_image());
-    let slash = images.add(make_slash_image());
 
     let white = images.add(Image::new_fill(
         Extent3d {
@@ -71,6 +80,7 @@ pub fn load_game_assets(
             cursor,
             crosshair,
             slash,
+            slash_layout,
         },
         audio: AudioHandles::default(),
     });
@@ -83,6 +93,7 @@ pub fn check_assets_ready(
 ) {
     if asset_server.is_loaded_with_dependencies(&assets.font)
         && asset_server.is_loaded_with_dependencies(&assets.textures.player)
+        && asset_server.is_loaded_with_dependencies(&assets.textures.slash)
     {
         next_state.set(AppState::MainMenu);
     }
@@ -147,58 +158,6 @@ fn make_crosshair_image() -> Image {
 
     draw_crosshair_layer(&mut data, size, 1, 1, shadow);
     draw_crosshair_layer(&mut data, size, 0, 0, outline);
-
-    Image::new(
-        Extent3d {
-            width: size,
-            height: size,
-            depth_or_array_layers: 1,
-        },
-        TextureDimension::D2,
-        data,
-        TextureFormat::Rgba8UnormSrgb,
-        RenderAssetUsages::default(),
-    )
-}
-
-fn make_slash_image() -> Image {
-    let size = 96u32;
-    let mut data = vec![0; (size * size * 4) as usize];
-
-    let center_x = 28.0;
-    let center_y = size as f32 * 0.5;
-    let outer_radius = 41.0;
-    let inner_radius = 18.0;
-    let start_angle = -1.05f32;
-    let end_angle = 1.05f32;
-
-    for y in 0..size {
-        for x in 0..size {
-            let dx = x as f32 - center_x;
-            let dy = y as f32 - center_y;
-            let radius = (dx * dx + dy * dy).sqrt();
-            let angle = dy.atan2(dx);
-
-            if angle < start_angle || angle > end_angle {
-                continue;
-            }
-            if radius < inner_radius || radius > outer_radius {
-                continue;
-            }
-
-            let radial = ((radius - inner_radius) / (outer_radius - inner_radius)).clamp(0.0, 1.0);
-            let angle_center = 1.0 - (angle.abs() / end_angle.abs()).clamp(0.0, 1.0);
-            let band_strength = (1.0 - (radial - 0.45).abs() * 1.9).clamp(0.0, 1.0);
-            let alpha = (band_strength * (0.35 + angle_center * 0.65) * 255.0) as u8;
-            if alpha == 0 {
-                continue;
-            }
-
-            let glow = (220.0 + angle_center * 35.0) as u8;
-            let color = [glow, 250, 255, alpha];
-            set_icon_pixel(&mut data, size, x as i32, y as i32, color);
-        }
-    }
 
     Image::new(
         Extent3d {

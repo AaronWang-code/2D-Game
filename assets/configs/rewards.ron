@@ -3,7 +3,7 @@
     (
       reward: EnhanceMeleeWeapon,
       title: "近战精通",
-      description: "强化近战伤害、攻击距离和攻击范围，并略微缩短近战冷却。持续强化后可解锁弹反。",
+      description: "强化近战伤害、范围与冷却，后续可解锁弹反。",
       value: 1.0,
     ),
     (
@@ -11,6 +11,12 @@
       title: "攻速提升 +10%",
       description: "提高近战与远程的攻击速度。",
       value: 0.10,
+    ),
+    (
+      reward: IncreaseAttackPower,
+      title: "攻击力提升 +15%",
+      description: "提高近战与远程的攻击伤害。",
+      value: 0.15,
     ),
     (
       reward: IncreaseMaxHealth,
@@ -56,4 +62,3 @@
     ),
   ],
 )
-

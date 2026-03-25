@@ -8,6 +8,7 @@ pub struct RoomId(pub u32);
 pub enum RoomType {
     Start,
     Normal,
+    Shop,
     Reward,
     Puzzle,
     Boss,
@@ -46,6 +47,7 @@ pub struct RoomBounds {
 pub struct RoomData {
     pub id: RoomId,
     pub room_type: RoomType,
+    pub mystery: bool,
     pub connections: RoomConnections,
     pub bounds: RoomBounds,
 }

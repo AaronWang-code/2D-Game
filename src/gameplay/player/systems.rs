@@ -20,8 +20,6 @@ pub fn spawn_player(
     data: Option<Res<GameDataRegistry>>,
     existing_player_q: Query<(), With<Player>>,
 ) {
-    // 从 RewardSelect/Paused 返回 InGame 时也会触发 OnEnter(InGame)。
-    // 如果这里重复生成 Player，会导致大量系统的 `get_single()` 失败，从而出现“回到游戏后无法移动/无响应”。
     if existing_player_q.iter().next().is_some() {
         return;
     }
@@ -30,13 +28,15 @@ pub fn spawn_player(
     let max_hp = cfg.map(|c| c.max_hp).unwrap_or(100.0);
     let move_speed = cfg.map(|c| c.move_speed).unwrap_or(260.0);
     let attack_power = cfg.map(|c| c.attack_power).unwrap_or(18.0);
-    let attack_cd = cfg.map(|c| c.attack_cooldown_s).unwrap_or(0.50);
-    let ranged_cd = cfg.map(|c| c.ranged_cooldown_s).unwrap_or(0.70);
+    let attack_cd = cfg.map(|c| c.attack_cooldown_s).unwrap_or(0.70);
+    let ranged_cd = cfg.map(|c| c.ranged_cooldown_s).unwrap_or(0.80);
     let dash_cd = cfg.map(|c| c.dash_cooldown_s).unwrap_or(1.2);
     let dash_speed = cfg.map(|c| c.dash_speed).unwrap_or(680.0);
     let dash_duration = cfg.map(|c| c.dash_duration_s).unwrap_or(0.12);
     let inv_s = cfg.map(|c| c.invincibility_s).unwrap_or(0.35);
     let crit = cfg.map(|c| c.crit_chance).unwrap_or(0.05);
+    let energy_max = cfg.map(|c| c.energy_max).unwrap_or(100.0);
+    let skill1_cd = cfg.map(|c| c.skill1_cooldown_s).unwrap_or(1.1);
 
     let mut entity = commands.spawn((SpriteBundle {
         texture: assets.textures.player.clone(),
@@ -61,9 +61,11 @@ pub fn spawn_player(
             max: max_hp,
         },
         Energy {
-            current: 100.0,
-            max: 100.0,
+            current: energy_max,
+            max: energy_max,
         },
+        Gold(0),
+        Combo::new(1.8),
         Velocity::default(),
         MoveSpeed(move_speed),
         AttackPower(attack_power),
@@ -78,7 +80,14 @@ pub fn spawn_player(
     entity.insert((
         AttackCooldown::new(attack_cd),
         RangedCooldown::new(ranged_cd),
+        RangedRapidFire {
+            ramp: 0,
+            decay: Timer::from_seconds(0.65, TimerMode::Once),
+        },
         DashCooldown::new(dash_cd),
+        Skill1Cooldown {
+            timer: Timer::from_seconds(skill1_cd, TimerMode::Once),
+        },
         InvincibilityTimer {
             timer: Timer::from_seconds(inv_s, TimerMode::Once),
         },
@@ -90,6 +99,63 @@ pub fn spawn_player(
         Flash::new(0.0),
         Knockback(Vec2::ZERO),
     ));
+}
+
+pub fn player_energy_regen_system(
+    time: Res<Time>,
+    data: Option<Res<GameDataRegistry>>,
+    mut q: Query<&mut Energy, With<Player>>,
+) {
+    let Ok(mut energy) = q.get_single_mut() else {
+        return;
+    };
+    if !ENERGY_SYSTEM_ENABLED {
+        energy.current = energy.max;
+        return;
+    }
+    let regen = data
+        .as_deref()
+        .map(|d| d.player.energy_regen_per_s)
+        .unwrap_or(12.0);
+    energy.current = (energy.current + regen * time.delta_seconds()).min(energy.max);
+}
+
+pub fn player_heal_channel_system(
+    time: Res<Time>,
+    input: Res<PlayerInputState>,
+    data: Option<Res<GameDataRegistry>>,
+    mut q: Query<(&mut Health, &mut Energy), With<Player>>,
+) {
+    if !ENERGY_SYSTEM_ENABLED {
+        return;
+    }
+    if !input.heal_held {
+        return;
+    }
+    let Ok((mut hp, mut energy)) = q.get_single_mut() else {
+        return;
+    };
+    if hp.current <= 0.0 || hp.current >= hp.max {
+        return;
+    }
+    let cfg = data.as_deref().map(|d| &d.player);
+    let energy_per_s = cfg
+        .map(|c| c.heal_energy_cost_per_s)
+        .unwrap_or(20.0)
+        .max(0.0);
+    let heal_per_s = cfg.map(|c| c.heal_hp_per_s).unwrap_or(18.0).max(0.0);
+
+    let dt = time.delta_seconds();
+    let need = energy_per_s * dt;
+    if energy.current <= 0.0 {
+        return;
+    }
+    let ratio = (energy.current / need).clamp(0.0, 1.0);
+    let actual_dt = dt * ratio;
+    let actual_need = energy_per_s * actual_dt;
+
+    energy.current = (energy.current - actual_need).max(0.0);
+    hp.current = (hp.current + heal_per_s * actual_dt).min(hp.max);
 }
 
 pub fn player_move_system(

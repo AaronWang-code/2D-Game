@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use crate::core::assets::GameAssets;
 use crate::gameplay::map::InGameEntity;
+use crate::utils::entity::safe_despawn_recursive;
 
 #[derive(Component, Debug, Clone)]
 pub struct Particle {
@@ -48,7 +49,7 @@ pub fn update_particles(
         tf.translation += (p.velocity * time.delta_seconds()).extend(0.0);
         sprite.color.set_alpha(1.0 - p.lifetime.fraction());
         if p.lifetime.finished() {
-            commands.entity(e).despawn_recursive();
+            safe_despawn_recursive(&mut commands, e);
         }
     }
 }

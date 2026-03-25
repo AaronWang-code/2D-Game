@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::gameplay::map::InGameEntity;
+use crate::utils::entity::safe_despawn_recursive;
 
 #[derive(Component, Debug, Clone)]
 pub struct Afterimage {
@@ -44,7 +45,7 @@ pub fn update_afterimages(
         a.timer.tick(time.delta());
         sprite.color.set_alpha(0.45 * (1.0 - a.timer.fraction()));
         if a.timer.finished() {
-            commands.entity(e).despawn_recursive();
+            safe_despawn_recursive(&mut commands, e);
         }
     }
 }

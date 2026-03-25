@@ -1,0 +1,8 @@
+Melee slash sprite source:
+https://opengameart.org/content/pixel-art-sword-slash-effect
+
+Downloaded asset file:
+https://opengameart.org/sites/default/files/pixel_art_sword_slash_sprites.png
+
+License:
+CC0
